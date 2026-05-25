@@ -105,6 +105,7 @@ export default {
         console.log('Creating family:', newFamilyName.value)
         const familyMember: FamilyMember = (await apiService.post('family/create', {familyName: newFamilyName.value})).body
         familyStore.addFamily(familyMember)
+        familyStore.activeFamilyTab = familyMember.id
       } catch (error) {
         console.log(error)
         showError('Ошибка создания семьи')
@@ -161,12 +162,14 @@ export default {
         console.log("Joining family: ", joinFamilyCode.value)
         const familyMember = (await apiService.post(`family/use-invitation`, {code: joinFamilyCode.value} )).body
         familyStore.addFamily(familyMember)
+        familyStore.activeFamilyTab = familyMember.id
       }
       catch(error: any){
         console.log(error)
         showError(error.message)
       }
       creatingFamily.value = false
+
     }
 
     const handleOpenInvitationForm = async (): Promise<void> => {

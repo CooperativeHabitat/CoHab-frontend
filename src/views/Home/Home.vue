@@ -378,6 +378,7 @@
           </button>
           <button
               class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              :disabled="!activeFamilyTab"
               @click="handleOpenInvitationForm"
           >
             Создать код приглашения
