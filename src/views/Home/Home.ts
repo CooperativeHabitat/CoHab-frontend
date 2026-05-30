@@ -103,7 +103,7 @@ export default {
       creatingFamily.value = true
       try {
         console.log('Creating family:', newFamilyName.value)
-        const familyMember: FamilyMember = (await apiService.post('family/create', {familyName: newFamilyName.value})).body
+        const familyMember: FamilyMember = (await apiService.post('family/create', newFamilyName.value)).body
         familyStore.addFamily(familyMember)
         familyStore.activeFamilyTab = familyMember.id
       } catch (error) {
