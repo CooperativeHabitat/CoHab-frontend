@@ -1,22 +1,20 @@
-import type { ErrorParse} from '@/types/responses.ts';
-import {AuthError, ValidationError} from "@/error/types/errors.ts";
+
+import { ProblemDetail } from "@/error/types/serverErrorResponses";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-async function parseProblemDetail(response: Response): Promise<void> {
 
-    const problem: ErrorParse = response as ErrorParse;
-    switch (problem.status) {
-      case 400:
-        throw new ValidationError("Ошибка валидации!", problem.fieldErrors);
-      case 401:
-        throw new AuthError(problem.detail, problem.title);
-    }
+async function handleApiError(response: Response) {
+    var body = await response.json()
+    console.log(body.properties)
+        throw new ProblemDetail(
+        body.title,
+        body.status,
+        body.detail,
+        body.properties,
+        body.fieldErrors
+    );
 }
 
-
-export async function handleApiError(response: Response): Promise<void> {
-  await parseProblemDetail(response);
-}
 
 export async function apiRequest(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
@@ -34,12 +32,14 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
     ...options,
     headers,
   });
-  let body: any = null;
-  try {
-    body = await response.json();
-  } catch {
-    body = null;
+  if(!response.ok){
+    await handleApiError(response)
   }
+
+  let body: any = null;
+  try{
+    body = await response.json();
+  } catch{}
 
   return {
     body,
@@ -51,9 +51,6 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
 export const apiService = {
   async get(url: string) {
     const result = await apiRequest(url);
-    if (!result.ok) {
-      await handleApiError(result.body);
-    }
     return result;
   },
 
@@ -63,9 +60,6 @@ export const apiService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    if (!result.ok) {
-      await handleApiError(result.body);
-    }
     console.log('Запрос прошел без ошибок.')
     return result;
   },
@@ -75,9 +69,6 @@ export const apiService = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    if (!result.ok) {
-      await handleApiError(result.body);
-    }
     return result;
   },
 
@@ -85,29 +76,7 @@ export const apiService = {
     const result = await apiRequest(url, {
       method: 'DELETE',
       body: JSON.stringify(data)});
-    if (!result.ok) {
-      await handleApiError(result.body);
-    }
     return result;
   },
 
 };
-
-export async function hasFamily(): Promise<boolean> {
-  const response = await apiService.get('member/hasFamily');
-  return response.ok;
-}
-
-// export async function getFamilyMembers(): Promise<ReadMemberDto[]> {
-//   const response = await apiService.get('family/members');
-//   return await response;
-// }
-//
-// export async function createFamily(familyName: string): Promise<ReadFamilyDto> {
-//   if (!familyName || !familyName.trim()) {
-//     throw new Error('Family name is required');
-//   }
-//   const data: CreateFamilyDto = { familyName: familyName.trim() };
-//   const response = await apiService.post('family/create', data);
-//   return await response.body;
-// }

@@ -1,11 +1,10 @@
-<!-- CreateInvitationComponent.vue -->
 <script setup lang="ts">
 import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue";
 import { computed, ref } from "vue";
 import useFamilyStore from "@/stores/familyStore.ts";
 import type { CreateInvitation, Invitation } from "@/types/family.ts";
 import { apiService } from "@/services/api.ts";
-import { ValidationError } from "@/error/types/errors.ts";
+import { ProblemDetail, ValidationError } from "@/error/types/serverErrorResponses";
 import InvitationComponent from "@/views/Home/templates/InvitationComponent.vue";
 
 const emit = defineEmits<{
@@ -47,10 +46,12 @@ const createInvitationFunc = async (): Promise<void> => {
       numMembers: form.value.numMembers,
       expiresAt: form.value.expiresAt
     };
-
     invitation.value = (await apiService.post("family/create-invitation", createInvitation)).body;
     showInvitation.value = true;
-  } catch (error: any) {
+  } catch (error) {
+    if(error instanceof ProblemDetail){
+      errorState.value.validationError = new ValidationError(error)
+    }
     console.error('Ошибка создания приглашения:', error);
   } finally {
     isSaving.value = false;

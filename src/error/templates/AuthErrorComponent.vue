@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {AuthError} from "@/error/types/errors.ts";
+import type {ProblemDetail} from "@/error/types/serverErrorResponses";
 
 defineProps<{
-  error: AuthError | null;
+  error: ProblemDetail | null;
 }>()
 </script>
 
@@ -13,7 +13,7 @@ defineProps<{
   </svg>
   <div>
     <h3 class="text-sm font-medium text-red-800">{{error.title}}</h3>
-    <p class="text-sm text-red-700 mt-1">{{error.message}}</p>
+    <p class="text-sm text-red-700 mt-1">{{error.detail}}</p>
   </div>
   </div>
 </template>

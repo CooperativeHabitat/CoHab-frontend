@@ -1,15 +1,25 @@
+import { ProblemDetail } from "@/error/types/serverErrorResponses";
 import {apiRequest} from "@/services/api.ts";
 
 
 export const authService = {
     async isAuthenticated(): Promise<Boolean> {
-        const response = await apiRequest("auth/isAuthenticated", {method: 'POST'});
-        return response.ok;
+        try{
+            await apiRequest("auth/isAuthenticated", {method: 'POST'});
+            return true
+        } catch(err){
+
+        }
+        return false
     },
 
     async checkUser(): Promise<Boolean> {
-        const response = await apiRequest("auth/isUser", {method: 'POST'});
-        return response.ok;
+        try{
+            await apiRequest("auth/isUser", {method: 'POST'});
+            return true
+        } catch(err) {
+        }
+        return false
     },
 
     logout()  {

@@ -103,9 +103,8 @@ import type { Task } from '@/types/task'
 import type { FamilyMember } from "@/types/family.ts"
 import { apiService } from '@/services/api'
 import useFamilyStore from "@/stores/familyStore.ts";
-import {AuthError, ValidationError} from "@/error/types/errors.ts";
+import {ProblemDetail, ValidationError} from "@/error/types/serverErrorResponses";
 import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue";
-import AuthErrorComponent from "@/error/templates/AuthErrorComponent.vue";
 
 interface Emits {
   (e: 'close'): void
@@ -203,8 +202,9 @@ const saveTask = async () => {
     emit('saved', response.body)
     emit('close')
   } catch(err){
-    if (err instanceof ValidationError) {
-      errorState.value.validationError = err;
+    if (err instanceof ProblemDetail) {
+      console.log("Ошибка при создании задачи")
+      errorState.value.validationError = new ValidationError(err);
     }
   } finally {
     isSaving.value = false
@@ -215,11 +215,7 @@ onMounted(() => {
   updateForm()
 })
 
-
-
-// Следи за изменениями props.task
 watch(() => familyStore.editTask, () => {
   updateForm()
-
 }, { deep: true })
 </script>

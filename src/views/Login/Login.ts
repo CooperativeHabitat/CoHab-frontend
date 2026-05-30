@@ -2,7 +2,7 @@ import {computed, ref} from 'vue';
 import {useRouter} from 'vue-router';
 import {apiService} from '@/services/api';
 import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue";
-import {AuthError, ValidationError} from "@/error/types/errors.ts";
+import {ProblemDetail, ValidationError} from "@/error/types/serverErrorResponses";
 import Header from "@/views/header/Header.vue";
 import AuthErrorComponent from "@/error/templates/AuthErrorComponent.vue";
 
@@ -14,7 +14,7 @@ export default {
     const username = ref<string>('');
     const password = ref<string>('');
     const loading = ref<boolean>(false);
-    const errorState= ref<{ validationError?: ValidationError | null, authError?: AuthError | null }> ({
+    const errorState= ref<{ validationError?: ValidationError | null, authError?: ProblemDetail | null }> ({
       validationError: null,
       authError: null
     });
@@ -35,13 +35,12 @@ export default {
         await router.push('/');
 
       } catch (err: unknown) {
-        if (err instanceof ValidationError) {
-          errorState.value.validationError = err;
+        if(err instanceof ProblemDetail) {
+          if(err.title == 'BadCredentialsException')
+            errorState.value.authError = err;
+          else if(err.title == 'BindException')
+            errorState.value.validationError = new ValidationError(err)
         }
-        if(err instanceof AuthError) {
-          errorState.value.authError = err;
-        }
-
       } finally {
         loading.value = false;
       }

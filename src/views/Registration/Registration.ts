@@ -1,7 +1,7 @@
 import {computed, ref} from 'vue';
 import {useRouter} from 'vue-router';
 import {apiService} from '@/services/api';
-import {ValidationError} from "@/error/types/errors.ts";
+import {ProblemDetail, ValidationError} from "@/error/types/serverErrorResponses";
 import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue";
 import Header from "@/views/header/Header.vue";
 import AuthErrorComponent from "@/error/templates/AuthErrorComponent.vue";
@@ -42,8 +42,8 @@ export default {
                 await router.push('/');
 
             } catch (err: unknown) {
-                if (err instanceof ValidationError) {
-                    errorState.value.validationError = err;
+                if (err instanceof ProblemDetail) {
+                    errorState.value.validationError = new ValidationError(err);
                 }
 
             } finally {
