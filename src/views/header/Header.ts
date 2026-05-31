@@ -1,9 +1,15 @@
 import {getLoginState} from "@/services/loginStateResolver.ts";
+import { HomeIcon, UserIcon, LogOutIcon } from 'lucide-vue-next'
 import {authService} from "@/services/authService.ts";
 import router from "@/router";
 
 export default {
     name: 'Header',
+    components: {           
+        HomeIcon,          
+        UserIcon,           
+        LogOutIcon          
+    }, 
 
     setup() {
         const {loginState} = getLoginState();

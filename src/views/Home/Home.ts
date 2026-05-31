@@ -8,10 +8,11 @@ import TaskComponent from "@/views/Home/templates/TaskComponent.vue";
 import EditTaskComponent from "@/views/Home/templates/EditTaskComponent.vue";
 import type {CreateInvitation} from "@/types/family.ts";
 import CreateInvitationComponent from "@/views/Home/templates/CreateInvitationComponent.vue";
+import FamilyMemberCard from './templates/FamilyMemberCard.vue'
 
 export default {
   name: 'HomeView',
-  components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent },
+  components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent, FamilyMemberCard },
   setup() {
     const homeLoading = ref(false)
     const familyMembersLoading = ref(false)

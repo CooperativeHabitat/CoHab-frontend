@@ -1,103 +1,104 @@
 <template>
-    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-800">Приглашение создано</h3>
-        <button
-            @click="copyInvitation"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-          </svg>
-          Копировать
-        </button>
+  <article>
+    <header>
+      <h3>Приглашение создано</h3>
+      <button @click="copyInvitation" class="outline small">
+        <CopyIcon :size="14" />
+        Копировать
+      </button>
+    </header>
+
+    <div class="code-block">
+      <small>Код приглашения</small>
+      <div class="code">
+        <UserPlusIcon :size="20" />
+        <code>{{ invitationCode }}</code>
       </div>
-      
-      <div class="mb-4">
-        <div class="mb-2">
-          <span class="text-sm font-medium text-gray-500">Код приглашения</span>
-        </div>
-        <div class="bg-white p-4 rounded-lg border">
-          <div class="flex items-center">
-            <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="font-mono text-lg font-semibold text-gray-800">
-                {{ invitationCode }}
-              </p>
-            </div>
-          </div>
+    </div>
+
+    <div class="details">
+      <div class="detail">
+        <UsersIcon :size="20" />
+        <div>
+          <small>Могут присоединиться</small>
+          <strong>{{ numMembers }}</strong>
         </div>
       </div>
-
-      <!-- Детали -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-white p-3 rounded-lg border">
-          <div class="flex items-center mb-1">
-            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-              <svg width="80" height="80" viewBox="0 0 24 24">
-                <defs>
-                  <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#93c5fd"/>
-                    <stop offset="100%" stop-color="#60a5fa"/>
-                  </linearGradient>
-                </defs>
-
-                <circle cx="12" cy="8" r="4" fill="url(#blueGradient)" stroke="#3b82f6" stroke-width="0.8"/>
-                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"
-                      fill="url(#blueGradient)"
-                      stroke="#3b82f6"
-                      stroke-width="0.8"
-                      stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">Человек могут присоединиться</p>
-              <p class="font-semibold text-gray-800">
-                {{ numMembers }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-3 rounded-lg border">
-          <div class="flex items-center mb-1">
-            <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center mr-2">
-              <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">Действует до</p>
-              <p class="font-semibold text-gray-800">
-                {{ expiresAt }}
-              </p>
-            </div>
-          </div>
+      <div class="detail">
+        <ClockIcon :size="20" />
+        <div>
+          <small>Действует до</small>
+          <strong>{{ expiresAt }}</strong>
         </div>
       </div>
     </div>
+  </article>
 </template>
 
 <script setup lang="ts">
-
-
+import { CopyIcon, UserPlusIcon, UsersIcon, ClockIcon } from 'lucide-vue-next'
 
 interface Props {
-  invitationCode: string,
-  numMembers: number,
+  invitationCode: string
+  numMembers: number
   expiresAt: string
-
 }
 
 const props = defineProps<Props>()
 
-
 const copyInvitation = async () => {
-  await navigator.clipboard.writeText(props.invitationCode);
+  await navigator.clipboard.writeText(props.invitationCode)
+}
+</script>
+
+<style src="@/styles/base.css"></style>
+
+<style scoped>
+.code-block {
+  margin: 1rem 0;
 }
 
-</script>
+.code {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--pico-card-sectioning-background-color);
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+code {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--pico-primary);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--pico-card-sectioning-background-color);
+  border-radius: 0.5rem;
+}
+
+.detail svg {
+  color: var(--pico-primary);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+button.outline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+</style>

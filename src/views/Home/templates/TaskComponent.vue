@@ -1,103 +1,76 @@
 <template>
-  <div :class="taskClasses">
-    <!-- Заголовок -->
-    <div class="flex items-start justify-between mb-4">
-      <div class="flex-1">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded">
-            #{{ task.value.id.slice(0, 8) }}
+  <article :class="taskClasses">
+    <header>
+      <div>
+        <small>#{{ task.value.id.slice(0, 8) }}</small>
+        <div class="status-group">
+          <span :class="statusIcon('isMarked')">
+            <CheckIcon v-if="task.value.isMarked" :size="16" />
+            <span v-else>○</span>
           </span>
-          <div class="flex items-center gap-2">
-            <div :class="statusIcon('isMarked', 'green')">
-              <svg v-if="task.value.isMarked" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-              </svg>
-              <span v-else class="text-xs">✓</span>
-            </div>
-            <div :class="statusIcon('isChecked', 'blue')">
-              <svg v-if="task.value.isChecked" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span v-else class="text-xs">✓</span>
-            </div>
-            <span :class="statusBadgeClasses">{{ statusText }}</span>
-          </div>
-        </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">{{ task.value.taskName }}</h3>
-        <p v-if="task.value.description" class="text-gray-600 mb-4">{{ task.value.description }}</p>
-      </div>
-      <div class="w-32 ml-4">
-        <div class="mb-2">
-          <div class="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Срок</span>
-            <span :class="{'text-red-600 font-semibold': isOverdue}">{{ timeLeft }}</span>
-          </div>
-          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div :class="progressBarClasses" :style="{ width: `${Math.min(deadlineProgress, 100)}%` }"></div>
-          </div>
+          <span :class="statusIcon('isChecked')">
+            <CheckCircleIcon v-if="task.value.isChecked" :size="16" />
+            <span v-else>○</span>
+          </span>
+          <span :class="statusBadgeClasses">{{ statusText }}</span>
         </div>
       </div>
-    </div>
+      <div class="progress-bar">
+        <small>Срок: {{ timeLeft }}</small>
+        <progress :value="deadlineProgress" max="100" :class="progressColor"></progress>
+      </div>
+    </header>
 
-    <!-- Информация о задаче -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-      <PersonCard
-          :person="task.value.createdBy"
-          :is-checked="task.value.isChecked"
-          :can-action="canCheckTask"
-          action-type="check"
-          @action="$emit('check-task', task, !task.value.isChecked)"
+    <h3>{{ task.value.taskName }}</h3>
+    <p v-if="task.value.description">{{ task.value.description }}</p>
+
+    <div class="task-grid">
+      <TaskPersonCard
+        :person="task.value.createdBy"
+        :is-checked="task.value.isChecked"
+        :can-action="canCheckTask"
+        action-type="check"
+        @action="$emit('check-task', task, !task.value.isChecked)"
       />
-      <PersonCard
-          :person="task.value.issuedTo"
-          :is-marked="task.value.isMarked"
-          :can-action="canMarkTask && !task.value.isChecked"
-          action-type="mark"
-          @action="$emit('mark-task', task, !task.value.isMarked)"
+      <TaskPersonCard
+        :person="task.value.issuedTo"
+        :is-marked="task.value.isMarked"
+        :can-action="canMarkTask && !task.value.isChecked"
+        action-type="mark"
+        @action="$emit('mark-task', task, !task.value.isMarked)"
       />
     </div>
 
-    <!-- Действия -->
-    <div class="flex flex-wrap gap-4 text-sm">
-      <div class="flex items-center">
-        <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span class="text-gray-600">Создана: {{ formatDate(task.value.createdDate) }}</span>
-      </div>
-
-      <div class="flex items-center">
-        <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span :class="{'text-red-600 font-semibold': isOverdue, 'text-gray-600': !isOverdue}">
+    <footer>
+      <div class="task-meta">
+        <span>
+          <CalendarIcon :size="14" />
+          Создана: {{ formatDate(task.value.createdDate) }}
+        </span>
+        <span :class="{ 'overdue': isOverdue }">
+          <ClockIcon :size="14" />
           Дедлайн: {{ formatDate(task.value.dueDate) }}
         </span>
       </div>
-
-      <div class="ml-auto flex gap-2">
-        <button @click="$emit('edit-task', task)" class="text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-2 rounded-lg font-medium transition-colors flex items-center">
-          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-          Редактировать
+      <div class="task-actions">
+        <button @click="$emit('edit-task', task)" class="outline small">
+          <EditIcon :size="14" />
+          Изменить
         </button>
-
-        <button @click="$emit('delete-task', task)" class="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-3 py-2 rounded-lg font-medium transition-colors flex items-center">
-          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+        <button @click="$emit('delete-task', task)" class="outline small" style="color: var(--pico-del-color);">
+          <TrashIcon :size="14" />
           Удалить
         </button>
       </div>
-    </div>
-  </div>
+    </footer>
+  </article>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, type Ref } from 'vue'
+import { CheckIcon, CheckCircleIcon, CalendarIcon, ClockIcon, EditIcon, TrashIcon } from 'lucide-vue-next'
 import type { Task } from '@/types/task'
-import PersonCard from '@/views/Home/templates/PersonCard.vue'
+import TaskPersonCard from '@/views/Home/templates/TaskPersonCard.vue'
 
 interface Props {
   task: Ref<Task>
@@ -113,12 +86,8 @@ const emit = defineEmits<{
 }>()
 
 const now = ref(new Date())
+onMounted(() => setInterval(() => now.value = new Date(), 60000))
 
-onMounted(() => {
-  setInterval(() => now.value = new Date(), 60000)
-})
-
-// Computed
 const isOverdue = computed(() => new Date(props.task.value.dueDate) < now.value)
 const deadlineProgress = computed(() => {
   const created = new Date(props.task.value.createdDate).getTime()
@@ -134,27 +103,24 @@ const timeLeft = computed(() => {
   if (diff <= 0) return 'Просрочено'
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  return days > 0 ? `Осталось ${days} дн. ${hours} ч.` : `Осталось ${hours} часов`
+  return days > 0 ? `${days} дн. ${hours} ч.` : `${hours} ч.`
 })
 
 const canMarkTask = computed(() => props.currentUserId === props.task.value.issuedTo.id)
 const canCheckTask = computed(() => props.currentUserId === props.task.value.createdBy.id)
 
-// CSS Classes
-const taskClasses = computed(() => [
-  'task-item p-6 rounded-xl border-2 transition-all duration-300',
-  isOverdue.value ? 'border-red-300 bg-red-50' :
-      props.task.value.isMarked && props.task.value.isChecked ? 'border-green-300 bg-green-50' :
-          props.task.value.isMarked ? 'border-blue-300 bg-blue-50' :
-              !props.task.value.isMarked && !isOverdue.value ? 'border-yellow-300 bg-yellow-50' :
-                  'border-gray-200 bg-white'
-])
+const taskClasses = computed(() => {
+  if (isOverdue.value) return 'task overdue'
+  if (props.task.value.isMarked && props.task.value.isChecked) return 'task done'
+  if (props.task.value.isMarked) return 'task review'
+  return 'task active'
+})
 
-const progressBarClasses = computed(() => [
-  'h-full transition-all duration-500',
-  deadlineProgress.value <= 20 ? 'bg-green-500' :
-      deadlineProgress.value <= 50 ? 'bg-yellow-500' : 'bg-red-500'
-])
+const progressColor = computed(() => {
+  if (deadlineProgress.value <= 20) return 'green'
+  if (deadlineProgress.value <= 50) return 'yellow'
+  return 'red'
+})
 
 const statusText = computed(() => {
   if (isOverdue.value) return 'ПРОСРОЧЕНО'
@@ -164,20 +130,15 @@ const statusText = computed(() => {
 })
 
 const statusBadgeClasses = computed(() => {
-  const base = 'text-xs font-semibold px-2 py-1 rounded'
-  if (isOverdue.value) return `${base} text-red-600 bg-red-100`
-  if (props.task.value.isMarked && props.task.value.isChecked) return `${base} text-green-600 bg-green-100`
-  if (props.task.value.isMarked) return `${base} text-blue-600 bg-blue-100`
-  return `${base} text-yellow-600 bg-yellow-100`
+  if (isOverdue.value) return 'badge overdue'
+  if (props.task.value.isMarked && props.task.value.isChecked) return 'badge done'
+  if (props.task.value.isMarked) return 'badge review'
+  return 'badge active'
 })
 
-// Helpers
-const statusIcon = (field: 'isMarked' | 'isChecked', color: string) => [
-  'w-6 h-6 rounded-full flex items-center justify-center border-2',
-  props.task.value[field]
-      ? `bg-${color}-100 text-${color}-600 border-${color}-300`
-      : 'bg-gray-100 text-gray-400 border-gray-300'
-]
+const statusIcon = (field: 'isMarked' | 'isChecked') => {
+  return props.task.value[field] ? 'status-icon active' : 'status-icon'
+}
 
 const formatDate = (date: Date | string) => {
   if (!date) return 'Не указана'
@@ -185,12 +146,91 @@ const formatDate = (date: Date | string) => {
 }
 </script>
 
+<style src="@/styles/base.css"></style>
+
 <style scoped>
-.task-item {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.task.overdue { border-left: 4px solid var(--pico-del-color); }
+.task.done { border-left: 4px solid #22c55e; }
+.task.review { border-left: 4px solid #3b82f6; }
+.task.active { border-left: 4px solid #eab308; }
+
+.status-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-.task-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+.status-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--pico-muted-border-color);
+  font-size: 0.75rem;
+}
+
+.status-icon.active {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.badge.overdue { background: #fee2e2; color: #dc2626; }
+.badge.done { background: #dcfce7; color: #16a34a; }
+.badge.review { background: #dbeafe; color: #2563eb; }
+.badge.active { background: #fef9c3; color: #ca8a04; }
+
+.progress-bar {
+  min-width: 8rem;
+}
+
+progress {
+  width: 100%;
+  height: 0.5rem;
+}
+
+progress.green { accent-color: #22c55e; }
+progress.yellow { accent-color: #eab308; }
+progress.red { accent-color: #ef4444; }
+
+.task-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--pico-muted-color);
+}
+
+.task-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.overdue { color: var(--pico-del-color); font-weight: 600; }
+
+.task-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+button.small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .task-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
