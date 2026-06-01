@@ -1,23 +1,17 @@
-<script setup lang="ts">
-import type {ProblemDetail} from "@/error/types/serverErrorResponses";
-
-defineProps<{
-  error: ProblemDetail | null;
-}>()
-</script>
-
 <template>
-  <div v-if="error" class="flex items-start">
-  <svg class="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-  </svg>
-  <div>
-    <h3 class="text-sm font-medium text-red-800">{{error.title}}</h3>
-    <p class="text-sm text-red-700 mt-1">{{error.detail}}</p>
-  </div>
+  <div v-if="error" class="d-flex align-items-start">
+    <i class="bi bi-exclamation-circle flex-shrink-0 me-2 text-danger" style="font-size: 1.25rem; margin-top: 0.125rem;"></i>
+    <div>
+      <h6 class="text-danger fw-medium">{{ error.title }}</h6>
+      <p class="text-danger small mb-0">{{ error.detail }}</p>
+    </div>
   </div>
 </template>
 
-<style scoped>
+<script setup lang="ts">
+import type { ProblemDetail } from "@/error/types/serverErrorResponses"
 
-</style>
+defineProps<{
+  error: ProblemDetail | null
+}>()
+</script>

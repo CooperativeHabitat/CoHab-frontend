@@ -1,11 +1,13 @@
+@import 'splitpanes/dist/splitpanes.css';
+
 /* Глобальные стили */
 body {
-    background-image: url('https://images.steamusercontent.com/ugc/52453354080448818/543783B601D5A853E3F50907B9722A314DFD92B6/?imw=512&amp;imh=320&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true');
-    background-size: cover;
+    background-image: url('@/assets/background.jpg');
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
 }
+
 html, body, #app {
   margin: 0;
   padding: 0;
@@ -15,4 +17,32 @@ html, body, #app {
 
 :root {
   --pico-font-size: 90%;
+}
+
+.splitpanes__pane {
+  background: transparent !important;
+}
+
+.splitpanes.default-theme .splitpanes__pane {
+  background: transparent !important;
+}
+
+.splitpanes__splitter {
+  background-color: var(--bs-border-color) !important;
+  border: none !important;
+}
+
+.splitpanes__splitter::before,
+.splitpanes__splitter::after {
+  background-color: var(--bs-border-color) !important;
+}
+
+.splitpanes--vertical > .splitpanes__splitter {
+  width: 4px !important;
+  min-width: 4px !important;
+}
+
+.splitpanes--horizontal > .splitpanes__splitter {
+  height: 4px !important;
+  min-height: 4px !important;
 }

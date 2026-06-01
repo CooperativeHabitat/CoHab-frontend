@@ -1,56 +1,24 @@
 <template>
-  <header class="header">
+  <nav class="navbar navbar-expand sticky-top border-bottom bg-body">
     <div class="container">
-      <nav>
-        <ul>
-          <li>
-            <a href="/" class="logo">
-              <HomeIcon :size="24" />
-              <strong>Семейный органайзер</strong>
-            </a>
-          </li>
-        </ul>
-        <ul v-if="state?.requiresAuth">
-          <li>
-            <button @click="handleProfileClick" title="Профиль">
-              <UserIcon :size="20" />
-            </button>
-          </li>
-          <li>
-            <button @click="handleLogoutClick" title="Выйти" class="logout-btn">
-              <LogOutIcon :size="20" />
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <a href="/" class="navbar-brand d-flex align-items-center gap-2 text-primary">
+        <HomeIcon :size="24" />
+        <strong>Семейный органайзер</strong>
+      </a>
+      <ul v-if="state?.requiresAuth" class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <button @click="handleProfileClick" class="btn nav-link" title="Профиль">
+            <UserIcon :size="20" />
+          </button>
+        </li>
+        <li class="nav-item">
+          <button @click="handleLogoutClick" class="btn nav-link text-danger" title="Выйти">
+            <LogOutIcon :size="20" />
+          </button>
+        </li>
+      </ul>
     </div>
-  </header>
+  </nav>
 </template>
 
 <script src="./Header.ts" lang="ts"></script>
-<style src="@/styles/base.css"></style>
-
-<style scoped>
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  backdrop-filter: blur(12px);
-  background: var(--pico-card-background-color);
-  border-bottom: 1px solid var(--pico-muted-border-color);
-  border-radius: 0 0 1rem 1rem !important;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--pico-primary);
-  text-decoration: none;
-}
-
-.logout-btn:hover {
-  color: var(--pico-primary-inverse);
-  background: var(--pico-del-color);
-}
-</style>

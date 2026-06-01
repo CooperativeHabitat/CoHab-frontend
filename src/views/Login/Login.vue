@@ -1,47 +1,38 @@
 <template>
   <Header />
-  <main class="auth-container">
-    <article>
-      <header>
+  <main class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="card shadow" style="max-width: 28rem; width: 100%;">
+      <div class="card-header text-center">
         <h2>С возвращением!</h2>
-        <p>Войдите в аккаунт</p>
-      </header>
-
-      <div v-if="hasErrors" class="error">
-        <ValidationErrorComponent :error="errorState.validationError" />
-        <AuthErrorComponent :error="errorState.authError" />
+        <p class="text-muted mb-0">Войдите в аккаунт</p>
       </div>
 
-      <form @submit.prevent="handleLogin">
-        <label>
-          Имя пользователя
-          <input v-model="username" type="text" placeholder="Введите имя пользователя" required />
-        </label>
+      <div class="card-body">
+        <div v-if="hasErrors" class="alert alert-danger">
+          <ValidationErrorComponent :error="errorState.validationError" />
+          <AuthErrorComponent :error="errorState.authError" />
+        </div>
 
-        <label>
-          Пароль
-          <input v-model="password" type="password" placeholder="Введите пароль" required />
-        </label>
+        <form @submit.prevent="handleLogin">
+          <div class="mb-3">
+            <label class="form-label">Имя пользователя</label>
+            <input v-model="username" type="text" class="form-control" placeholder="Введите имя пользователя" required />
+          </div>
 
-        <button type="submit">Войти</button>
-      </form>
+          <div class="mb-3">
+            <label class="form-label">Пароль</label>
+            <input v-model="password" type="password" class="form-control" placeholder="Введите пароль" required />
+          </div>
 
-      <footer>
-        <small>Нет аккаунта? <a href="/cohab/registration">Зарегистрироваться</a></small>
-      </footer>
-    </article>
+          <button type="submit" class="btn btn-primary w-100">Войти</button>
+        </form>
+      </div>
+
+      <div class="card-footer text-center">
+        <small class="text-muted">Нет аккаунта? <a href="/cohab/registration">Зарегистрироваться</a></small>
+      </div>
+    </div>
   </main>
 </template>
 
 <script src="./Login.ts" lang="ts"></script>
-
-<style scoped>
-.auth-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-</style>

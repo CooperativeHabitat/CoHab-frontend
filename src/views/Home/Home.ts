@@ -4,15 +4,21 @@ import Header from "@/views/header/Header.vue"
 import type {Family, FamilyMember} from "@/types/family.ts"
 import getFamilyStore from "@/stores/familyStore.ts"
 import type {Task} from "@/types/task.ts";
-import TaskComponent from "@/views/Home/templates/TaskComponent.vue";
-import EditTaskComponent from "@/views/Home/templates/EditTaskComponent.vue";
+import TaskComponent from "@/views/Home/templates/task/TaskComponent.vue";
+import EditTaskComponent from "@/views/Home/templates/task/EditTaskComponent.vue";
 import type {CreateInvitation} from "@/types/family.ts";
 import CreateInvitationComponent from "@/views/Home/templates/CreateInvitationComponent.vue";
-import FamilyMemberCard from './templates/FamilyMemberCard.vue'
+import FamilyMemberCard from './templates/member/FamilyMemberCard.vue'
+import { Splitpanes, Pane } from 'splitpanes'
+import FamilySettings from './templates/FamilySettings.vue'
+import ChatComponent from './templates/ChatComponent.vue'
+import 'splitpanes/dist/splitpanes.css'
+import TaskManager from './templates/task/TaskManager.vue'
+import MembersPanel from './templates/member/MembersPanel.vue'
 
 export default {
   name: 'HomeView',
-  components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent, FamilyMemberCard },
+  components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent, FamilyMemberCard, Splitpanes, Pane, FamilySettings, ChatComponent, MembersPanel, TaskManager},
   setup() {
     const homeLoading = ref(false)
     const familyMembersLoading = ref(false)
@@ -27,6 +33,8 @@ export default {
     const joiningFamily = ref(false)
     const userHasFamily = ref(true)
     const activeFamilyTab = computed(() => familyStore.activeFamilyTab)
+    const showFamilySettings = ref(false)
+    const settingsTab = ref('general')
 
     const familyMembers = ref<Ref<FamilyMember>[]>([])
     const currentTasks = computed(() => {
@@ -66,11 +74,11 @@ export default {
       }
     }
 
-    const loadTasks = async (familyId: string): Promise<void> => {
+    const loadTasks = async (familyId: string, force: boolean): Promise<void> => {
       if(!familyId) return
       tasksLoading.value = true
       try {
-        if(!familyStore.tasks[familyId]) {
+        if(!familyStore.tasks[familyId] || force) {
           const tasksLoad: Task[] = (await apiService.get('task/' + familyId)).body || []
           familyStore.loadTasks(tasksLoad, familyId)
         }
@@ -82,12 +90,12 @@ export default {
       }
     }
 
-    const loadMembers = async (familyId: string): Promise<void> => {
+    const loadMembers = async (familyId: string, force: boolean): Promise<void> => {
       if (!familyId) return
 
       familyMembersLoading.value = true
       try {
-        if (!familyStore.members[familyId]) {
+        if (!familyStore.members[familyId] || force) {
           const members: FamilyMember[] = (await apiService.get('family/' + familyId + '/members')).body || []
           familyStore.loadMembers(members)
         }
@@ -188,8 +196,8 @@ export default {
 
     watch(activeFamilyTab, async (newTab) => {
       if (newTab) {
-        await loadMembers(newTab)
-        await loadTasks(newTab)
+        await loadMembers(newTab, false)
+        await loadTasks(newTab, false)
       }
     })
 
@@ -238,7 +246,8 @@ export default {
       handleEditTaskPress,
       handleCloseTaskForm,
       handleJoinFamily,
-
+      showFamilySettings,
+      settingsTab,
       handleCloseInvitationForm,
       showCreateInvitationComponent,
       handleOpenInvitationForm

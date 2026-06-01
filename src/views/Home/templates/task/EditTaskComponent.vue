@@ -1,55 +1,57 @@
 <template>
-  <dialog open @click.self="$emit('close')">
-    <article>
-      <header>
-        <h2>{{ familyStore.editTask ? 'Редактирование задачи' : 'Новая задача' }}</h2>
-        <button @click="$emit('close')" class="close">
-          <XIcon :size="20" />
-        </button>
-      </header>
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ familyStore.editTask ? 'Редактирование задачи' : 'Новая задача' }}</h5>
+          <button @click="$emit('close')" class="btn-close"></button>
+        </div>
 
-      <div v-if="hasErrors" class="error">
-        <ValidationErrorComponent :error="errorState.validationError" />
+        <div class="modal-body">
+          <div v-if="hasErrors" class="alert alert-danger">
+            <ValidationErrorComponent :error="errorState.validationError" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Название задачи</label>
+            <input v-model="form.taskName" type="text" class="form-control" placeholder="Введите название задачи" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Описание</label>
+            <textarea v-model="form.description" rows="3" class="form-control" placeholder="Опишите задачу подробнее" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Исполнитель</label>
+            <select v-model="form.issuedToId" class="form-select">
+              <option value="" disabled>Выберите исполнителя</option>
+              <option v-for="member in familyMembers" :key="member.value?.id" :value="member.value?.id">
+                {{ formatMemberName(member.value) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Срок выполнения</label>
+            <input v-model="form.dueDate" type="datetime-local" class="form-control" />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="$emit('close')" class="btn btn-secondary">Отмена</button>
+          <button @click="saveTask" :disabled="isSaving || !form.taskName.trim()" class="btn btn-primary">
+            <span v-if="isSaving" class="spinner-border spinner-border-sm me-1"></span>
+            {{ isSaving ? 'Сохранение...' : familyStore.editTask ? 'Сохранить' : 'Создать' }}
+          </button>
+        </div>
       </div>
-
-      <label>
-        Название задачи
-        <input v-model="form.taskName" type="text" placeholder="Введите название задачи" />
-      </label>
-
-      <label>
-        Описание
-        <textarea v-model="form.description" rows="3" placeholder="Опишите задачу подробнее" />
-      </label>
-
-      <label>
-        Исполнитель
-        <select v-model="form.issuedToId">
-          <option value="" disabled>Выберите исполнителя</option>
-          <option v-for="member in familyMembers" :key="member.value?.id" :value="member.value?.id">
-            {{ formatMemberName(member.value) }}
-          </option>
-        </select>
-      </label>
-
-      <label>
-        Срок выполнения
-        <input v-model="form.dueDate" type="datetime-local" />
-      </label>
-
-      <footer>
-        <button @click="$emit('close')" class="secondary">Отмена</button>
-        <button @click="saveTask" :disabled="isSaving || !form.taskName.trim()" :aria-busy="isSaving">
-          {{ isSaving ? 'Сохранение...' : familyStore.editTask ? 'Сохранить' : 'Создать' }}
-        </button>
-      </footer>
-    </article>
-  </dialog>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
-import { XIcon } from 'lucide-vue-next'
 import type { Task } from '@/types/task'
 import type { FamilyMember } from "@/types/family.ts"
 import { apiService } from '@/services/api'
@@ -145,46 +147,3 @@ const saveTask = async () => {
 onMounted(() => updateForm())
 watch(() => familyStore.editTask, () => updateForm(), { deep: true })
 </script>
-
-<style scoped>
-dialog {
-  backdrop-filter: blur(4px);
-}
-
-article {
-  max-width: 36rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.close {
-  background: none;
-  border: none;
-  padding: 0.25rem;
-  cursor: pointer;
-  color: var(--pico-muted-color);
-}
-
-.error {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #fee2e2;
-  border-radius: 0.5rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 1rem;
-}
-
-footer {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-</style>

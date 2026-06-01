@@ -1,67 +1,53 @@
 <template>
   <Header />
-  <main class="auth-container">
-    <article>
-      <header>
+  <main class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="card shadow" style="max-width: 28rem; width: 100%;">
+      <div class="card-header text-center">
         <h2>С возвращением!</h2>
-        <p>Войдите в семейный аккаунт</p>
-      </header>
-
-      <div v-if="hasErrors" class="error">
-        <ValidationErrorComponent :error="errorState.validationError" />
-        <AuthErrorComponent :error="errorState.authError" />
+        <p class="text-muted mb-0">Войдите в семейный аккаунт</p>
       </div>
 
-      <form @submit.prevent="handleRegistration">
-        <label>
-          Имя пользователя
-          <input v-model="username" type="text" placeholder="Введите имя пользователя" required />
-        </label>
+      <div class="card-body">
+        <div v-if="hasErrors" class="alert alert-danger">
+          <ValidationErrorComponent :error="errorState.validationError" />
+          <AuthErrorComponent :error="errorState.authError" />
+        </div>
 
-        <label>
-          Пароль
-          <input v-model="password" type="password" placeholder="Введите пароль" required />
-        </label>
+        <form @submit.prevent="handleRegistration">
+          <div class="mb-3">
+            <label class="form-label">Имя пользователя</label>
+            <input v-model="username" type="text" class="form-control" placeholder="Введите имя пользователя" required />
+          </div>
 
-        <label>
-          Имя
-          <input v-model="firstname" type="text" placeholder="Введите ваше имя" required />
-        </label>
+          <div class="mb-3">
+            <label class="form-label">Пароль</label>
+            <input v-model="password" type="password" class="form-control" placeholder="Введите пароль" required />
+          </div>
 
-        <label>
-          Фамилия
-          <input v-model="lastname" type="text" placeholder="Введите вашу фамилию" required />
-        </label>
+          <div class="mb-3">
+            <label class="form-label">Имя</label>
+            <input v-model="firstname" type="text" class="form-control" placeholder="Введите ваше имя" required />
+          </div>
 
-        <label>
-          День рождения
-          <input v-model="birthDate" type="date" required />
-        </label>
+          <div class="mb-3">
+            <label class="form-label">Фамилия</label>
+            <input v-model="lastname" type="text" class="form-control" placeholder="Введите вашу фамилию" required />
+          </div>
 
-        <button type="submit">Создать аккаунт</button>
-      </form>
+          <div class="mb-3">
+            <label class="form-label">День рождения</label>
+            <input v-model="birthDate" type="date" class="form-control" required />
+          </div>
 
-      <footer>
-        <small>Есть аккаунт? <a href="/cohab/login">Войти</a></small>
-      </footer>
-    </article>
+          <button type="submit" class="btn btn-primary w-100">Создать аккаунт</button>
+        </form>
+      </div>
+
+      <div class="card-footer text-center">
+        <small class="text-muted">Есть аккаунт? <a href="/cohab/login">Войти</a></small>
+      </div>
+    </div>
   </main>
 </template>
 
 <script src="./Registration.ts" lang="ts"></script>
-<style src="@/styles/base.css"></style>
-
-<style scoped>
-.auth-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.auth-container article {
-  max-width: 28rem;
-  width: 100%;
-}
-</style>

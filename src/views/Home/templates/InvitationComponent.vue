@@ -1,38 +1,44 @@
 <template>
-  <article>
-    <header>
-      <h3>Приглашение создано</h3>
-      <button @click="copyInvitation" class="outline small">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Приглашение создано</h5>
+      <button @click="copyInvitation" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
         <CopyIcon :size="14" />
         Копировать
       </button>
-    </header>
-
-    <div class="code-block">
-      <small>Код приглашения</small>
-      <div class="code">
-        <UserPlusIcon :size="20" />
-        <code>{{ invitationCode }}</code>
-      </div>
     </div>
 
-    <div class="details">
-      <div class="detail">
-        <UsersIcon :size="20" />
-        <div>
-          <small>Могут присоединиться</small>
-          <strong>{{ numMembers }}</strong>
+    <div class="card-body">
+      <div class="mb-3">
+        <small class="text-muted">Код приглашения</small>
+        <div class="d-flex align-items-center gap-3 p-3 bg-body-tertiary rounded-3 mt-1">
+          <UserPlusIcon :size="20" class="text-primary" />
+          <code class="fs-5 fw-bold text-primary">{{ invitationCode }}</code>
         </div>
       </div>
-      <div class="detail">
-        <ClockIcon :size="20" />
-        <div>
-          <small>Действует до</small>
-          <strong>{{ expiresAt }}</strong>
+
+      <div class="row g-3">
+        <div class="col-6">
+          <div class="d-flex align-items-start gap-3 p-3 bg-body-tertiary rounded-3">
+            <UsersIcon :size="20" class="text-primary flex-shrink-0 mt-1" />
+            <div>
+              <small class="text-muted">Могут присоединиться</small>
+              <strong class="d-block">{{ numMembers }}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="d-flex align-items-start gap-3 p-3 bg-body-tertiary rounded-3">
+            <ClockIcon :size="20" class="text-primary flex-shrink-0 mt-1" />
+            <div>
+              <small class="text-muted">Действует до</small>
+              <strong class="d-block">{{ expiresAt }}</strong>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </article>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -50,55 +56,3 @@ const copyInvitation = async () => {
   await navigator.clipboard.writeText(props.invitationCode)
 }
 </script>
-
-<style src="@/styles/base.css"></style>
-
-<style scoped>
-.code-block {
-  margin: 1rem 0;
-}
-
-.code {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: var(--pico-card-sectioning-background-color);
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-code {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--pico-primary);
-}
-
-.details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.detail {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: var(--pico-card-sectioning-background-color);
-  border-radius: 0.5rem;
-}
-
-.detail svg {
-  color: var(--pico-primary);
-  flex-shrink: 0;
-  margin-top: 0.25rem;
-}
-
-button.outline {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-</style>
