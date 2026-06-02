@@ -15,11 +15,11 @@
         <div class="card shadow-sm flex-grow-1 d-flex flex-column overflow-hidden">
           <div class="card-header bg-body-tertiary border-bottom">
             <ul class="nav nav-tabs card-header-tabs gap-1">
-              <li v-for="(family, id) in families" :key="id" class="nav-item">
+              <li v-for="(family, id) in familyStore.families" :key="id" class="nav-item">
                 <button @click="familyStore.activeFamilyTab = id; showFamilySettings = false"
                         :class="['nav-link', { active: activeFamilyTab === id && !showFamilySettings }]">
                   {{ family.familyName }}
-                  <span class="badge bg-primary ms-2">{{ familyMembers.length }}</span>
+                  <span class="badge bg-primary ms-2">{{ family.memberCount }}</span>
                 </button>
               </li>
               <li class="nav-item">
@@ -32,9 +32,12 @@
           </div>
 
           <div class="card-body flex-grow-1 overflow-hidden d-flex flex-column">
-            <FamilySettings v-if="showFamilySettings && activeFamilyTab"
-                            :family-name="activeFamily?.familyName"
-                            @back="showFamilySettings = false" />
+            <FamilySettings v-if="showFamilySettings && activeFamilyTab && familyStore.families[activeFamilyTab]"
+                            :family-name="familyStore.families[activeFamilyTab].familyName"
+                            :error="familySettingsError"
+                            :roles="familyStore.roles[activeFamilyTab]"
+                            @back="showFamilySettings = false"
+                            @save="handleSaveFamilyName" />
 
             <div v-if="!activeFamilyTab && !showFamilySettings" class="mx-auto my-auto" style="max-width: 48rem;">
               <div v-if="!showCreateFamilyForm && !showJoinFamilyForm" class="row g-4">
@@ -98,7 +101,7 @@
               </div>
             </div>
 
-            <div v-if="activeFamilyTab && families[activeFamilyTab] && !showFamilySettings" class="flex-grow-1 overflow-hidden">
+            <div v-if="activeFamilyTab && familyStore.families[activeFamilyTab] && !showFamilySettings" class="flex-grow-1 overflow-hidden">
               <Splitpanes class="default-theme" style="height: 100%;">
                 <Pane :size="60" :min-size="40">
                   <TaskManager :tasks="currentTasks"
@@ -122,7 +125,7 @@
                     </Pane>
                     
                     <Pane :size="45" :min-size="20">
-                      <ChatComponent @close="toggleChatVisibility" />
+                      <ChatComponent/>
                     </Pane>
                   </Splitpanes>
                 </Pane>

@@ -16,6 +16,9 @@
   "dependencies": {
     "lucide-vue-next": "^1.0.0",
     "pinia": "^2.1.7",
+    "rsocket-core": "^0.0.29-alpha.0",
+    "rsocket-flowable": "^0.0.29-alpha.0",
+    "rsocket-websocket-client": "^0.0.29-alpha.0",
     "splitpanes": "^4.1.2",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1"

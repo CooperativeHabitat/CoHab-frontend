@@ -25,40 +25,33 @@
       </li>
     </ul>
 
-    <div v-if="activeTab === 'general'" class="card">
-      <div class="card-body d-flex flex-column gap-3">
-        <div>
-          <label class="form-label">Название семьи</label>
-          <input type="text" :value="familyName" placeholder="Название семьи" class="form-control" />
+    <div v-if="activeTab === 'general'" class="card" style="max-width: 48rem;">
+      <div class="card-body">
+        <ValidationErrorComponent v-if="error" :error="error" class="mb-3" />
+        <div class="d-flex gap-3 align-items-end">
+          <div class="flex-grow-1">
+            <label class="form-label">Название семьи</label>
+            <input v-model="familyNameModel" type="text" placeholder="Название семьи" class="form-control" />
+          </div>
+          <button @click="$emit('save', familyNameModel)" class="btn btn-secondary">Сохранить</button>
         </div>
-        <button class="btn btn-secondary">Сохранить</button>
       </div>
     </div>
 
     <div v-if="activeTab === 'roles'" class="card">
       <div class="card-body">
         <p class="text-muted">Управление ролями участников</p>
-        <div class="d-flex flex-column gap-2">
-          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+        <div v-if="!roles || roles.length === 0" class="text-center py-3">
+          <p class="text-muted">Роли не найдены</p>
+        </div>
+        <div v-else class="d-flex flex-column gap-2">
+          <div v-for="role in sortedRoles" :key="role.id"
+              class="d-flex justify-content-between align-items-center p-2 border rounded">
             <div>
-              <strong>Администратор</strong>
-              <p class="mb-0 small text-muted">Полный доступ</p>
+              <strong>{{ role.name }}</strong>
+              <p class="mb-0 small text-muted">{{ role.accessList.join(', ') }}</p>
             </div>
-            <span class="badge bg-primary">1 участник</span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
-            <div>
-              <strong>Модератор</strong>
-              <p class="mb-0 small text-muted">Управление задачами</p>
-            </div>
-            <span class="badge bg-secondary">0 участников</span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
-            <div>
-              <strong>Участник</strong>
-              <p class="mb-0 small text-muted">Базовый доступ</p>
-            </div>
-            <span class="badge bg-secondary">2 участника</span>
+            <span class="badge bg-primary">{{ role.memberCount }} участников</span>
           </div>
         </div>
       </div>
@@ -68,22 +61,38 @@
       <div class="card-body">
         <h5 class="text-danger">Опасная зона</h5>
         <p class="text-muted">Эти действия нельзя отменить</p>
-        <button class="btn btn-danger">Покинуть семью</button>
+        <button @click="$emit('leave')" class="btn btn-danger">Покинуть семью</button>
       </div>
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import type { ValidationError } from "@/error/types/serverErrorResponses"
+import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue"
+import type { Role } from '@/types/family'
 
-defineProps<{
+const props = defineProps<{
   familyName?: string
+  roles?: Role[]
+  error?: ValidationError | null
 }>()
 
 defineEmits<{
   back: []
+  save: [familyName: string]
+  leave: []
 }>()
 
 const activeTab = ref('general')
+const familyNameModel = ref(props.familyName || '')
+
+const sortedRoles = computed(() => {
+  if (!props.roles) return []
+  return [...props.roles].sort((a, b) => b.value - a.value)
+})
+
+watch(() => props.familyName, (val) => {
+  familyNameModel.value = val || ''
+})
 </script>

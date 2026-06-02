@@ -1,7 +1,8 @@
 export interface Family{
     id: string,
-    name: string,
-    createdBy: string
+    familyName: string,
+    createdBy: string,
+    memberCount: number
 }
 
 export interface Role{
@@ -9,6 +10,7 @@ export interface Role{
     name: string,
     value: number,
     accessList: string[],
+    memberCount: number
 }
 
 export interface PersonalInfo{

@@ -1,7 +1,7 @@
 import {computed, onMounted, type Ref, ref, watch} from 'vue'
 import {apiService} from '@/services/api'
 import Header from "@/views/header/Header.vue"
-import type {Family, FamilyMember} from "@/types/family.ts"
+import type {Family, FamilyMember, Role} from "@/types/family.ts"
 import getFamilyStore from "@/stores/familyStore.ts"
 import type {Task} from "@/types/task.ts";
 import TaskComponent from "@/views/Home/templates/task/TaskComponent.vue";
@@ -15,6 +15,8 @@ import ChatComponent from './templates/ChatComponent.vue'
 import 'splitpanes/dist/splitpanes.css'
 import TaskManager from './templates/task/TaskManager.vue'
 import MembersPanel from './templates/member/MembersPanel.vue'
+import { ValidationError } from '@/error/types/serverErrorResponses.ts'
+import { ProblemDetail } from '@/error/types/serverErrorResponses.ts'
 
 export default {
   name: 'HomeView',
@@ -34,7 +36,8 @@ export default {
     const userHasFamily = ref(true)
     const activeFamilyTab = computed(() => familyStore.activeFamilyTab)
     const showFamilySettings = ref(false)
-    const settingsTab = ref('general')
+    const familySettingsError = ref<ValidationError | null>(null)
+    const familyRolesLoading = ref(false)
 
     const familyMembers = ref<Ref<FamilyMember>[]>([])
     const currentTasks = computed(() => {
@@ -108,11 +111,43 @@ export default {
       }
     }
 
+    const loadRoles = async (familyId: string, force: boolean) : Promise<void> => {
+      if (!familyId) return
+      familyRolesLoading.value = true
+      try {
+        if(!familyStore.roles[familyId] || force) {
+          const roles : Role[] = (await apiService.get('role/' + familyId)).body || []
+          familyStore.loadRoles(familyId, roles)
+        } 
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка загрузки ролей') // todo
+      } finally {
+        familyRolesLoading.value = false
+      }
+    }
+
+    const handleSaveFamilyName = async (familyName: string) => {
+      try {
+        familySettingsError.value = null
+        const newFamily = await apiService.put('family', {
+          familyId: familyStore.activeFamilyTab,
+          familyName
+        })
+        const familyId = familyStore.activeFamilyTab!
+        if (familyStore.families[familyId]) {
+          familyStore.families[familyId] = ref(newFamily.body.family)
+        }
+      } catch (error) {
+        if (error instanceof ProblemDetail) {
+          familySettingsError.value = new ValidationError(error)
+        }
+      }
+    }
     const handleCreateFamily = async (): Promise<void> => {
       creatingFamily.value = true
       try {
-        console.log('Creating family:', newFamilyName.value)
-        const familyMember: FamilyMember = (await apiService.post('family/create', newFamilyName.value)).body
+        const familyMember: FamilyMember = (await apiService.post('family/create', {familyName: newFamilyName})).body
         familyStore.addFamily(familyMember)
         familyStore.activeFamilyTab = familyMember.id
       } catch (error) {
@@ -160,15 +195,13 @@ export default {
     }
 
     const handleEditTaskPress = async (task: Ref<Task>): Promise<void> => {
-
       showEditTaskComponent.value = true;
       familyStore.editTask = task.value
     }
 
     const handleJoinFamily = async (): Promise<void> => {
-      creatingFamily.value = true
+      joiningFamily.value = true
       try {
-        console.log("Joining family: ", joinFamilyCode.value)
         const familyMember = (await apiService.post(`family/use-invitation`, {code: joinFamilyCode.value} )).body
         familyStore.addFamily(familyMember)
         familyStore.activeFamilyTab = familyMember.id
@@ -177,18 +210,18 @@ export default {
         console.log(error)
         showError(error.message)
       }
-      creatingFamily.value = false
-
+      finally {
+        joiningFamily.value = false
+      }
     }
 
     const handleOpenInvitationForm = async (): Promise<void> => {
       showCreateInvitationComponent.value = true;
     }
 
-    const handleCloseInvitationForm = async (createInvitation: Ref<CreateInvitation>): Promise<void> => {
+    const handleCloseInvitationForm = async (): Promise<void> => {
       showCreateInvitationComponent.value = false;
     }
-
 
     const showAddTaskForm = (): void => {
       showEditTaskComponent.value = true
@@ -198,6 +231,7 @@ export default {
       if (newTab) {
         await loadMembers(newTab, false)
         await loadTasks(newTab, false)
+        await loadRoles(newTab, false)
       }
     })
 
@@ -211,11 +245,13 @@ export default {
     })
 
     return {
+      loadRoles,
       homeLoading,
       familyMembersLoading,
       tasksLoading,
-
-      // Form states
+      familyRolesLoading,
+      showEditTaskComponent,
+      showCreateInvitationComponent,
       showCreateFamilyForm,
       showJoinFamilyForm,
       newFamilyName,
@@ -223,34 +259,28 @@ export default {
       creatingFamily,
       joiningFamily,
       userHasFamily,
-
-      // Data
       activeFamilyTab,
       familyMembers,
       currentTasks,
       families,
-
       familyStore,
-
+      showFamilySettings,
+      familySettingsError,
       formatDate,
       showError,
       loadTasks,
       loadMembers,
       handleCreateFamily,
-      showEditTaskComponent,
       showAddTaskForm,
-
       handleMarkTask,
       handleCheckTask,
       handleDeleteTask,
       handleEditTaskPress,
       handleCloseTaskForm,
       handleJoinFamily,
-      showFamilySettings,
-      settingsTab,
       handleCloseInvitationForm,
-      showCreateInvitationComponent,
-      handleOpenInvitationForm
+      handleOpenInvitationForm,
+      handleSaveFamilyName
     }
   }
 }

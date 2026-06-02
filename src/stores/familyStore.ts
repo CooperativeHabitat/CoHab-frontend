@@ -1,14 +1,15 @@
 import { defineStore } from 'pinia'
 import {type Ref, ref} from 'vue'
-import type {CreateInvitation, Family, FamilyMember} from "@/types/family.ts"
+import type {CreateInvitation, Family, FamilyMember, Role} from "@/types/family.ts"
 import type {Task} from "@/types/task.ts"
 
 const useFamilyStore = defineStore('family', () => {
     const families = ref<Record<string, Ref<Family>>>({})
     const profiles = ref<Record<string, Ref<FamilyMember>>>({})
+    const roles = ref<Record<string, Ref<Role[]>>>({})
     const familiesLoaded = ref<boolean>(false)
     const members = ref<Record<string, Ref<FamilyMember>[]>>({'add':[]})
-    const tasks = ref<Record<string, Ref<Task>[]>>({'add':[]})
+    const tasks = ref<Record<string, Ref<Task>[]>>({})
     const editTask = ref<Task|null>()
     const activeFamilyTab = ref<string>()
     const createInvitation = ref<CreateInvitation>()
@@ -24,6 +25,12 @@ const useFamilyStore = defineStore('family', () => {
                     familyTasks[taskIndex].value = task
                 }
             }
+        }
+    }
+
+    function loadRoles(familyId: string, newRoles: Role[]) {
+        if(newRoles.length > 0){
+            roles.value[familyId] = ref(newRoles)
         }
     }
 
@@ -93,6 +100,7 @@ const useFamilyStore = defineStore('family', () => {
         profiles,
         familiesLoaded,
         members,
+        roles,
         tasks,
         editTask,
         activeFamilyTab,
@@ -106,6 +114,7 @@ const useFamilyStore = defineStore('family', () => {
         addTask,
         deleteTask,
         createInvitation,
+        loadRoles
 
     }
 })
