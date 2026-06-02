@@ -147,7 +147,7 @@ export default {
     const handleCreateFamily = async (): Promise<void> => {
       creatingFamily.value = true
       try {
-        const familyMember: FamilyMember = (await apiService.post('family/create', {familyName: newFamilyName})).body
+        const familyMember: FamilyMember = (await apiService.post('family/create', {familyName: newFamilyName.value})).body
         familyStore.addFamily(familyMember)
         familyStore.activeFamilyTab = familyMember.id
       } catch (error) {

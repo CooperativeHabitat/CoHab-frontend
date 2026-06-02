@@ -44,14 +44,25 @@
         <div v-if="!roles || roles.length === 0" class="text-center py-3">
           <p class="text-muted">Роли не найдены</p>
         </div>
-        <div v-else class="d-flex flex-column gap-2">
-          <div v-for="role in sortedRoles" :key="role.id"
-              class="d-flex justify-content-between align-items-center p-2 border rounded">
-            <div>
-              <strong>{{ role.name }}</strong>
-              <p class="mb-0 small text-muted">{{ role.accessList.join(', ') }}</p>
+        <div v-else class="accordion" id="rolesAccordion">
+          <div v-for="role in sortedRoles" :key="role.id" class="accordion-item">
+            <h2 class="accordion-header">
+              <button :class="['accordion-button', 'collapsed']"
+                      data-bs-toggle="collapse"
+                      :data-bs-target="'#role-' + role.id">
+                <strong>{{ role.name }}</strong>
+                <span class="badge bg-primary ms-2">{{ role.memberCount }} участников</span>
+              </button>
+            </h2>
+            <div :id="'role-' + role.id"
+                class="accordion-collapse collapse"
+                data-bs-parent="#rolesAccordion">
+              <div class="accordion-body">
+                <ul class="mb-0 small text-muted">
+                  <li v-for="access in role.accessList" :key="access">{{ access }}</li>
+                </ul>
+              </div>
             </div>
-            <span class="badge bg-primary">{{ role.memberCount }} участников</span>
           </div>
         </div>
       </div>
