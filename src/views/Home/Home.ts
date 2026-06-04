@@ -1,7 +1,7 @@
 import {computed, onMounted, type Ref, ref, watch} from 'vue'
 import {apiService} from '@/services/api'
 import Header from "@/views/header/Header.vue"
-import type {Family, FamilyMember, Role} from "@/types/family.ts"
+import type {Family, FamilyMember, Role, Access} from "@/types/family.ts"
 import getFamilyStore from "@/stores/familyStore.ts"
 import type {Task} from "@/types/task.ts";
 import TaskComponent from "@/views/Home/templates/task/TaskComponent.vue";
@@ -95,7 +95,6 @@ export default {
 
     const loadMembers = async (familyId: string, force: boolean): Promise<void> => {
       if (!familyId) return
-
       familyMembersLoading.value = true
       try {
         if (!familyStore.members[familyId] || force) {
@@ -121,11 +120,27 @@ export default {
         } 
       } catch (error) {
         console.log(error)
-        showError('Ошибка загрузки ролей') // todo
+        showError('Ошибка загрузки ролей')
       } finally {
         familyRolesLoading.value = false
       }
     }
+
+    const loadAccesses = async() : Promise<void> => {
+      try{
+        const accesses: Access[] = ((await apiService.get('role/accesses')).body) || []
+        familyStore.loadAccesses(accesses)
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка загрузки доступов')
+      }
+    }
+
+    const currentRoles = computed(() => {
+      const tab = activeFamilyTab.value
+      if (!tab || !familyStore.roles[tab]) return []
+      return familyStore.roles[tab].map(r => r.value)
+    })
 
     const handleSaveFamilyName = async (familyName: string) => {
       try {
@@ -144,6 +159,7 @@ export default {
         }
       }
     }
+
     const handleCreateFamily = async (): Promise<void> => {
       creatingFamily.value = true
       try {
@@ -199,6 +215,69 @@ export default {
       familyStore.editTask = task.value
     }
 
+    const handleCreateRole = async (role: { name: string; value: number; accessList: string[] }) => {
+      familyRolesLoading.value = true
+      try {
+        const newRole = (await apiService.post('role', {
+          familyId: familyStore.activeFamilyTab,
+          roleName: role.name,
+          value: role.value,
+          accesses: role.accessList
+        })).body
+        const familyId = familyStore.activeFamilyTab!
+        if (familyStore.roles[familyId]) {
+          familyStore.roles[familyId].push(ref(newRole))
+        } else {
+          familyStore.roles[familyId] = [ref(newRole)]
+        }
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка создания роли')
+      } finally {
+        familyRolesLoading.value = false
+      }
+    }
+
+    const handleUpdateRole = async (role: { id: string; name: string; value: number; accessList: string[] }) => {
+      familyRolesLoading.value = true
+      try {
+        await apiService.put('role', {
+          roleId: role.id,
+          familyId: familyStore.activeFamilyTab,
+          roleName: role.name,
+          value: role.value,
+          accesses: role.accessList
+        })
+        await loadRoles(familyStore.activeFamilyTab!, true)
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка обновления роли')
+      } finally {
+        familyRolesLoading.value = false
+      }
+    }
+
+    const handleDeleteRole = async (roleId: string) => {
+      familyRolesLoading.value = true
+      try {
+        await apiService.delete('role', {
+          familyId: familyStore.activeFamilyTab,
+          roleId: roleId
+        })
+        const familyId = familyStore.activeFamilyTab!
+        const roles = familyStore.roles[familyId]
+        if (roles) {
+          const index = roles.findIndex(r => r.value.id === roleId)
+          if (index !== -1) roles.splice(index, 1)
+        }
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка удаления роли')
+      } finally {
+        familyRolesLoading.value = true
+      }
+    }
+
     const handleJoinFamily = async (): Promise<void> => {
       joiningFamily.value = true
       try {
@@ -237,6 +316,7 @@ export default {
 
     onMounted(async () => {
       await loadFamilies()
+      await loadAccesses()
       await checkHasFamily()
 
       if (userHasFamily.value && Object.keys(families.value).length > 0) {
@@ -245,7 +325,6 @@ export default {
     })
 
     return {
-      loadRoles,
       homeLoading,
       familyMembersLoading,
       tasksLoading,
@@ -266,6 +345,7 @@ export default {
       familyStore,
       showFamilySettings,
       familySettingsError,
+      currentRoles,
       formatDate,
       showError,
       loadTasks,
@@ -280,7 +360,10 @@ export default {
       handleJoinFamily,
       handleCloseInvitationForm,
       handleOpenInvitationForm,
-      handleSaveFamilyName
+      handleSaveFamilyName,
+      handleCreateRole,
+      handleUpdateRole,
+      handleDeleteRole
     }
   }
 }

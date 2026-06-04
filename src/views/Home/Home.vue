@@ -35,9 +35,13 @@
             <FamilySettings v-if="showFamilySettings && activeFamilyTab && familyStore.families[activeFamilyTab]"
                             :family-name="familyStore.families[activeFamilyTab].familyName"
                             :error="familySettingsError"
-                            :roles="familyStore.roles[activeFamilyTab]"
+                            :roles="currentRoles"
+                            :accesses="familyStore.accesses"
                             @back="showFamilySettings = false"
-                            @save="handleSaveFamilyName" />
+                            @save="handleSaveFamilyName"
+                            @create-role="handleCreateRole"
+                            @update-role="handleUpdateRole"
+                            @delete-role="handleDeleteRole" />
 
             <div v-if="!activeFamilyTab && !showFamilySettings" class="mx-auto my-auto" style="max-width: 48rem;">
               <div v-if="!showCreateFamilyForm && !showJoinFamilyForm" class="row g-4">

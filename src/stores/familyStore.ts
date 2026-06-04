@@ -1,18 +1,19 @@
 import { defineStore } from 'pinia'
 import {type Ref, ref} from 'vue'
-import type {CreateInvitation, Family, FamilyMember, Role} from "@/types/family.ts"
+import type {CreateInvitation, Family, FamilyMember, Role, Access} from "@/types/family.ts"
 import type {Task} from "@/types/task.ts"
 
 const useFamilyStore = defineStore('family', () => {
     const families = ref<Record<string, Ref<Family>>>({})
     const profiles = ref<Record<string, Ref<FamilyMember>>>({})
-    const roles = ref<Record<string, Ref<Role[]>>>({})
+    const roles = ref<Record<string, Ref<Role>[]>>({})
     const familiesLoaded = ref<boolean>(false)
     const members = ref<Record<string, Ref<FamilyMember>[]>>({'add':[]})
     const tasks = ref<Record<string, Ref<Task>[]>>({})
     const editTask = ref<Task|null>()
     const activeFamilyTab = ref<string>()
     const createInvitation = ref<CreateInvitation>()
+    const accesses = ref<Access[]>()
 
     function updateTask(task: Task){
         if (activeFamilyTab.value) {
@@ -28,9 +29,13 @@ const useFamilyStore = defineStore('family', () => {
         }
     }
 
+    function loadAccesses(newAccesses: Access[]) {
+        accesses.value = newAccesses
+    }
+
     function loadRoles(familyId: string, newRoles: Role[]) {
         if(newRoles.length > 0){
-            roles.value[familyId] = ref(newRoles)
+            roles.value[familyId] = newRoles.map(role => ref(role))
         }
     }
 
@@ -92,6 +97,7 @@ const useFamilyStore = defineStore('family', () => {
         families.value = {}
         profiles.value = {}
         members.value = {}
+        accesses.value = []
         familiesLoaded.value = false
     }
     return {
@@ -107,14 +113,17 @@ const useFamilyStore = defineStore('family', () => {
 
         // Методы
         loadMembers,
+        accesses,
         loadFamilies,
         addFamily,
         loadTasks,
         updateTask,
         addTask,
         deleteTask,
+        loadAccesses,
         createInvitation,
-        loadRoles
+        loadRoles,
+        clearStore
 
     }
 })

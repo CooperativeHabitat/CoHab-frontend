@@ -9,8 +9,13 @@ export interface Role{
     id: string,
     name: string,
     value: number,
-    accessList: string[],
+    accessList: Access[],
     memberCount: number
+}
+
+export interface Access{
+    accessName: string,
+    description: string
 }
 
 export interface PersonalInfo{
@@ -18,7 +23,6 @@ export interface PersonalInfo{
     firstname: string,
     lastname: string,
     birthDate: string,
-    roles: Role[]
 }
 
 export interface FamilyMember{
@@ -26,6 +30,7 @@ export interface FamilyMember{
     username: string,
     personalInfo: PersonalInfo
     family: Family,
+    roles: Role[],
     addedAt: Date
 }
 
