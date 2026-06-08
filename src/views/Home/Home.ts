@@ -55,7 +55,7 @@ export default {
     }
 
     const showError = (message: string) => {
-      alert(`Ошибка: ${message}`)
+      console.log(`Ошибка: ${message}`)
     }
 
     const checkHasFamily = async (): Promise<void> => {
@@ -316,7 +316,7 @@ export default {
         
         const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
         if (memberIndex !== -1) {
-          familyMembers.value[memberIndex] = updatedMember
+          familyMembers.value[memberIndex].value = updatedMember
         }
       } catch (error) {
         console.log(error)
@@ -334,7 +334,7 @@ export default {
         
         const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
         if (memberIndex !== -1) {
-          familyMembers.value[memberIndex] = updatedMember
+          familyMembers.value[memberIndex].value = updatedMember
         }
       } catch (error) {
         console.log(error)
@@ -400,7 +400,7 @@ export default {
       handleCreateRole,
       handleUpdateRole,
       handleDeleteRole,
-      handleAssignRole,   
+      handleAssignRole,    
       handleDetachRole     
     }
   }
