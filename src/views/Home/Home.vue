@@ -124,8 +124,11 @@
                     <Pane :size="55" :min-size="30">
                       <MembersPanel :members="familyMembers"
                                     :members-loading="familyMembersLoading"
+                                    :available-roles="familyStore.roles[activeFamilyTab]"
                                     @settings="showFamilySettings = true"
-                                    @invite="handleOpenInvitationForm" />
+                                    @invite="handleOpenInvitationForm"
+                                    @assign-role="handleAssignRole"
+                                    @detach-role="handleDetachRole" />
                     </Pane>
                     
                     <Pane :size="45" :min-size="20">

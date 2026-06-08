@@ -306,6 +306,42 @@ export default {
       showEditTaskComponent.value = true
     }
 
+    const handleAssignRole = async (data: { familyId: string; familyMemberId: string; roleName: string }) => {
+      try {
+        const updatedMember = (await apiService.post('role/attach', {
+          familyId: data.familyId,
+          familyMemberId: data.familyMemberId,
+          roleName: data.roleName
+        })).body
+        
+        const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
+        if (memberIndex !== -1) {
+          familyMembers.value[memberIndex] = updatedMember
+        }
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка назначения роли')
+      }
+    }
+
+    const handleDetachRole = async (data: { familyId: string; familyMemberId: string; roleName: string }) => {
+      try {
+        const updatedMember = (await apiService.post('role/detach', {
+          familyId: data.familyId,
+          familyMemberId: data.familyMemberId,
+          roleName: data.roleName
+        })).body
+        
+        const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
+        if (memberIndex !== -1) {
+          familyMembers.value[memberIndex] = updatedMember
+        }
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка снятия роли')
+      }
+    }
+
     watch(activeFamilyTab, async (newTab) => {
       if (newTab) {
         await loadMembers(newTab, false)
@@ -363,7 +399,9 @@ export default {
       handleSaveFamilyName,
       handleCreateRole,
       handleUpdateRole,
-      handleDeleteRole
+      handleDeleteRole,
+      handleAssignRole,   
+      handleDetachRole     
     }
   }
 }

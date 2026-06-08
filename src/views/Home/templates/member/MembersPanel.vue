@@ -20,8 +20,12 @@
           <p>Нет участников</p>
         </div>
         <div v-else class="d-flex flex-column gap-3">
-          <div v-for="memberRef in memberRefs" :key="memberRef.value.id">
-            <FamilyMemberCard :member="memberRef" />
+          <div v-for="member in members" :key="member.value?.id || member.id">
+            <FamilyMemberCard 
+              :member="member"
+              :available-roles="availableRoles"
+              @assign-role="$emit('assign-role', $event)"
+              @detach-role="$emit('detach-role', $event)" />
           </div>
         </div>
       </div>
@@ -30,18 +34,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import type { Ref } from 'vue'
+import type { Role } from '@/types/family.ts';
 import FamilyMemberCard from './FamilyMemberCard.vue'
 
-const props = defineProps<{
+defineProps<{
   members: any[]
   membersLoading: boolean
+  availableRoles: Ref<Role>[]
 }>()
 
 defineEmits<{
   settings: []
   invite: []
+  'assign-role': [data: { familyId: string; familyMemberId: string; roleName: string }]
+  'detach-role': [data: { familyId: string; familyMemberId: string; roleName: string }]
 }>()
-
-const memberRefs = computed(() => props.members.map(member => ref(member)))
 </script>
