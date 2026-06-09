@@ -305,7 +305,6 @@ export default {
     const showAddTaskForm = (): void => {
       showEditTaskComponent.value = true
     }
-
     const handleAssignRole = async (data: { familyId: string; familyMemberId: string; roleName: string }) => {
       try {
         const updatedMember = (await apiService.post('role/attach', {
@@ -315,8 +314,9 @@ export default {
         })).body
         
         const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
-        if (memberIndex !== -1) {
-          familyMembers.value[memberIndex].value = updatedMember
+        const member = familyMembers.value[memberIndex]
+        if (memberIndex !== -1 && member) {
+          member.value = updatedMember
         }
       } catch (error) {
         console.log(error)
@@ -333,8 +333,9 @@ export default {
         })).body
         
         const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
-        if (memberIndex !== -1) {
-          familyMembers.value[memberIndex].value = updatedMember
+        const member = familyMembers.value[memberIndex]
+        if (memberIndex !== -1 && member) {
+          member.value = updatedMember
         }
       } catch (error) {
         console.log(error)
