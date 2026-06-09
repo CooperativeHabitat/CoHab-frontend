@@ -1,5 +1,6 @@
 import {computed, onMounted, type Ref, ref, watch} from 'vue'
 import {apiService} from '@/services/api'
+import {rsocketService} from '@/services/rsocket'
 import Header from "@/views/header/Header.vue"
 import type {Family, FamilyMember, Role, Access} from "@/types/family.ts"
 import getFamilyStore from "@/stores/familyStore.ts"
@@ -343,6 +344,126 @@ export default {
       }
     }
 
+    // Chat методы через RSocket
+    const handleSendMessage = async (content: string, replyToId?: string) => {
+      if (!activeFamilyTab.value) return
+      try {
+        await rsocketService.fireAndForget('api.family.chat.send', {
+          familyId: activeFamilyTab.value,
+          content: content,
+          replyToId: replyToId || null
+        })
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка отправки сообщения')
+      }
+    }
+
+    const handleEditMessage = async (messageId: string, content: string) => {
+      if (!activeFamilyTab.value) return
+      try {
+        await rsocketService.fireAndForget('api.family.chat.edit', {
+          familyId: activeFamilyTab.value,
+          messageId: messageId,
+          content: content
+        })
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка редактирования сообщения')
+      }
+    }
+
+    const handleDeleteMessage = async (messageId: string) => {
+      if (!activeFamilyTab.value) return
+      try {
+        await rsocketService.fireAndForget('api.family.chat.delete', {
+          familyId: activeFamilyTab.value,
+          messageId: messageId
+        })
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка удаления сообщения')
+      }
+    }
+
+    const handleViewMessage = async (messageId: string) => {
+      if (!activeFamilyTab.value) return
+      try {
+        await rsocketService.fireAndForget('api.family.chat.view', {
+          familyId: activeFamilyTab.value,
+          messageId: messageId
+        })
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка отметки просмотра сообщения')
+      }
+    }
+
+    const handleReactMessage = async (messageId: string, reaction: string) => {
+      if (!activeFamilyTab.value) return
+      try {
+        await rsocketService.fireAndForget('api.family.chat.react', {
+          familyId: activeFamilyTab.value,
+          messageId: messageId,
+          reaction: reaction
+        })
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка реакции на сообщение')
+      }
+    }
+
+    const connectToChatStream = (onMessage: (message: any) => void) => {
+      if (!activeFamilyTab.value) return null
+      
+      let subscription: any = null
+      
+      rsocketService.requestStream(`api.family.chat.${activeFamilyTab.value}.stream`).then(observable => {
+        subscription = observable.subscribe({
+          next: (response: any) => {
+            onMessage(response)
+          },
+          error: (error: any) => {
+            console.error('Chat stream error:', error)
+          }
+        })
+      }).catch(error => {
+        console.error('Failed to connect to chat stream:', error)
+      })
+      
+      return subscription
+    }
+
+    const loadChatHistory = async (page: number = 0, size: number = 20) => {
+      if (!activeFamilyTab.value) return []
+      try {
+        const messages = await rsocketService.requestStream(
+          `api.family.messages.${activeFamilyTab.value}`,
+          {
+            page: page,
+            size: size,
+            startDate: null,
+            endDate: null
+          }
+        )
+        
+        const result: any[] = []
+        await new Promise((resolve, reject) => {
+          messages.subscribe({
+            next: (message: any) => result.push(message),
+            error: (error: any) => reject(error),
+            complete: () => resolve(result)
+          })
+        })
+        
+        return result
+      } catch (error) {
+        console.log(error)
+        showError('Ошибка загрузки истории сообщений')
+        return []
+      }
+    }
+
     watch(activeFamilyTab, async (newTab) => {
       if (newTab) {
         await loadMembers(newTab, false)
@@ -402,7 +523,15 @@ export default {
       handleUpdateRole,
       handleDeleteRole,
       handleAssignRole,    
-      handleDetachRole     
+      handleDetachRole,
+      // Chat methods
+      handleSendMessage,
+      handleEditMessage,
+      handleDeleteMessage,
+      handleViewMessage,
+      handleReactMessage,
+      connectToChatStream,
+      loadChatHistory
     }
   }
 }
