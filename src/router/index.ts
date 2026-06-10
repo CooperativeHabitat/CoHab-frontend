@@ -24,6 +24,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresVerification: true }
     },
     {
+      path: '/home/family/:familyId/settings',
+      name: 'FamilySettingsPage',
+      component: () => import('@/views/FamilySettings/FamilySettings.vue'),
+      meta: { requiresAuth: true, requiresVerification: true  }
+    },
+    {
       path: '/verification',
       name: 'Verification',
       component: () => import('@/views/Verification/Verification.vue'),

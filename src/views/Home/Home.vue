@@ -16,15 +16,15 @@
           <div class="card-header bg-body-tertiary border-bottom">
             <ul class="nav nav-tabs card-header-tabs gap-1">
               <li v-for="(family, id) in familyStore.families" :key="id" class="nav-item">
-                <button @click="familyStore.activeFamilyTab = id; showFamilySettings = false"
-                        :class="['nav-link', { active: activeFamilyTab === id && !showFamilySettings }]">
+                <button @click="familyStore.activeFamilyTab = id"
+                        :class="['nav-link', { active: activeFamilyTab === id }]">
                   {{ family.familyName }}
                   <span class="badge bg-primary ms-2">{{ family.memberCount }}</span>
                 </button>
               </li>
               <li class="nav-item">
-                <button @click="familyStore.activeFamilyTab = null; showFamilySettings = false"
-                        :class="['nav-link', { active: !activeFamilyTab && !showFamilySettings }]">
+                <button @click="familyStore.activeFamilyTab = null"
+                        :class="['nav-link', { active: !activeFamilyTab }]">
                   +
                 </button>
               </li>
@@ -32,18 +32,7 @@
           </div>
 
           <div class="card-body flex-grow-1 overflow-hidden d-flex flex-column">
-            <FamilySettings v-if="showFamilySettings && activeFamilyTab && familyStore.families[activeFamilyTab]"
-                            :family-name="familyStore.families[activeFamilyTab].familyName"
-                            :error="familySettingsError"
-                            :roles="currentRoles"
-                            :accesses="familyStore.accesses"
-                            @back="showFamilySettings = false"
-                            @save="handleSaveFamilyName"
-                            @create-role="handleCreateRole"
-                            @update-role="handleUpdateRole"
-                            @delete-role="handleDeleteRole" />
-
-            <div v-if="!activeFamilyTab && !showFamilySettings" class="mx-auto my-auto" style="max-width: 48rem;">
+            <div v-if="!activeFamilyTab" class="mx-auto my-auto" style="max-width: 48rem;">
               <div v-if="!showCreateFamilyForm && !showJoinFamilyForm" class="row g-4">
                 <div class="col-md-6">
                   <div class="card h-100">
@@ -105,7 +94,7 @@
               </div>
             </div>
 
-            <div v-if="activeFamilyTab && familyStore.families[activeFamilyTab] && !showFamilySettings" class="flex-grow-1 overflow-hidden">
+            <div v-if="activeFamilyTab && familyStore.families[activeFamilyTab]" class="flex-grow-1 overflow-hidden">
               <Splitpanes class="default-theme" style="height: 100%;">
                 <Pane :size="60" :min-size="40">
                   <TaskManager :tasks="currentTasks"
@@ -125,7 +114,7 @@
                       <MembersPanel :members="familyMembers"
                                     :members-loading="familyMembersLoading"
                                     :available-roles="familyStore.roles[activeFamilyTab] || []"
-                                    @settings="showFamilySettings = true"
+                                    @settings="navigateToFamilySettings"
                                     @invite="handleOpenInvitationForm"
                                     @assign-role="handleAssignRole"
                                     @detach-role="handleDetachRole" />

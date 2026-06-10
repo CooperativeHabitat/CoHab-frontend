@@ -1,9 +1,10 @@
 import {computed, onMounted, type Ref, ref, watch} from 'vue'
+import {useRouter} from 'vue-router'
 import {apiService} from '@/services/api'
 import {rsocketService} from '@/services/rsocket'
 import Header from "@/views/header/Header.vue"
 import type {Family, FamilyMember, Role, Access} from "@/types/family.ts"
-import getFamilyStore from "@/stores/familyStore.ts"
+import useFamilyStore from "@/stores/familyStore.ts"
 import type {Task} from "@/types/task.ts";
 import TaskComponent from "@/views/Home/templates/task/TaskComponent.vue";
 import EditTaskComponent from "@/views/Home/templates/task/EditTaskComponent.vue";
@@ -11,7 +12,6 @@ import type {CreateInvitation} from "@/types/family.ts";
 import CreateInvitationComponent from "@/views/Home/templates/CreateInvitationComponent.vue";
 import FamilyMemberCard from './templates/member/FamilyMemberCard.vue'
 import { Splitpanes, Pane } from 'splitpanes'
-import FamilySettings from './templates/FamilySettings.vue'
 import ChatComponent from './templates/ChatComponent.vue'
 import 'splitpanes/dist/splitpanes.css'
 import TaskManager from './templates/task/TaskManager.vue'
@@ -21,8 +21,9 @@ import { ProblemDetail } from '@/error/types/serverErrorResponses.ts'
 
 export default {
   name: 'HomeView',
-  components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent, FamilyMemberCard, Splitpanes, Pane, FamilySettings, ChatComponent, MembersPanel, TaskManager},
+  components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent, FamilyMemberCard, Splitpanes, Pane, ChatComponent, MembersPanel, TaskManager},
   setup() {
+    const router = useRouter()
     const homeLoading = ref(false)
     const familyMembersLoading = ref(false)
     const tasksLoading = ref(false)
@@ -36,16 +37,13 @@ export default {
     const joiningFamily = ref(false)
     const userHasFamily = ref(true)
     const activeFamilyTab = computed(() => familyStore.activeFamilyTab)
-    const showFamilySettings = ref(false)
-    const familySettingsError = ref<ValidationError | null>(null)
-    const familyRolesLoading = ref(false)
 
     const familyMembers = ref<Ref<FamilyMember>[]>([])
     const currentTasks = computed(() => {
       const tab = activeFamilyTab.value
       return tab ? familyStore.tasks[tab] || [] : []
     })
-    const familyStore = getFamilyStore()
+    const familyStore = useFamilyStore()
 
     const families = computed(() => familyStore.families)
 
@@ -113,7 +111,6 @@ export default {
 
     const loadRoles = async (familyId: string, force: boolean) : Promise<void> => {
       if (!familyId) return
-      familyRolesLoading.value = true
       try {
         if(!familyStore.roles[familyId] || force) {
           const roles : Role[] = (await apiService.get('role/' + familyId)).body || []
@@ -122,42 +119,12 @@ export default {
       } catch (error) {
         console.log(error)
         showError('Ошибка загрузки ролей')
-      } finally {
-        familyRolesLoading.value = false
       }
     }
 
-    const loadAccesses = async() : Promise<void> => {
-      try{
-        const accesses: Access[] = ((await apiService.get('role/accesses')).body) || []
-        familyStore.loadAccesses(accesses)
-      } catch (error) {
-        console.log(error)
-        showError('Ошибка загрузки доступов')
-      }
-    }
-
-    const currentRoles = computed(() => {
-      const tab = activeFamilyTab.value
-      if (!tab || !familyStore.roles[tab]) return []
-      return familyStore.roles[tab].map(r => r.value)
-    })
-
-    const handleSaveFamilyName = async (familyName: string) => {
-      try {
-        familySettingsError.value = null
-        const newFamily = await apiService.put('family', {
-          familyId: familyStore.activeFamilyTab,
-          familyName
-        })
-        const familyId = familyStore.activeFamilyTab!
-        if (familyStore.families[familyId]) {
-          familyStore.families[familyId] = ref(newFamily.body.family)
-        }
-      } catch (error) {
-        if (error instanceof ProblemDetail) {
-          familySettingsError.value = new ValidationError(error)
-        }
+    const navigateToFamilySettings = () => {
+      if (activeFamilyTab.value) {
+        router.push(`/home/family/${activeFamilyTab.value}/settings`)
       }
     }
 
@@ -216,69 +183,6 @@ export default {
       familyStore.editTask = task.value
     }
 
-    const handleCreateRole = async (role: { name: string; value: number; accessList: string[] }) => {
-      familyRolesLoading.value = true
-      try {
-        const newRole = (await apiService.post('role', {
-          familyId: familyStore.activeFamilyTab,
-          roleName: role.name,
-          value: role.value,
-          accesses: role.accessList
-        })).body
-        const familyId = familyStore.activeFamilyTab!
-        if (familyStore.roles[familyId]) {
-          familyStore.roles[familyId].push(ref(newRole))
-        } else {
-          familyStore.roles[familyId] = [ref(newRole)]
-        }
-      } catch (error) {
-        console.log(error)
-        showError('Ошибка создания роли')
-      } finally {
-        familyRolesLoading.value = false
-      }
-    }
-
-    const handleUpdateRole = async (role: { id: string; name: string; value: number; accessList: string[] }) => {
-      familyRolesLoading.value = true
-      try {
-        await apiService.put('role', {
-          roleId: role.id,
-          familyId: familyStore.activeFamilyTab,
-          roleName: role.name,
-          value: role.value,
-          accesses: role.accessList
-        })
-        await loadRoles(familyStore.activeFamilyTab!, true)
-      } catch (error) {
-        console.log(error)
-        showError('Ошибка обновления роли')
-      } finally {
-        familyRolesLoading.value = false
-      }
-    }
-
-    const handleDeleteRole = async (roleId: string) => {
-      familyRolesLoading.value = true
-      try {
-        await apiService.delete('role', {
-          familyId: familyStore.activeFamilyTab,
-          roleId: roleId
-        })
-        const familyId = familyStore.activeFamilyTab!
-        const roles = familyStore.roles[familyId]
-        if (roles) {
-          const index = roles.findIndex(r => r.value.id === roleId)
-          if (index !== -1) roles.splice(index, 1)
-        }
-      } catch (error) {
-        console.log(error)
-        showError('Ошибка удаления роли')
-      } finally {
-        familyRolesLoading.value = true
-      }
-    }
-
     const handleJoinFamily = async (): Promise<void> => {
       joiningFamily.value = true
       try {
@@ -306,6 +210,7 @@ export default {
     const showAddTaskForm = (): void => {
       showEditTaskComponent.value = true
     }
+    
     const handleAssignRole = async (data: { familyId: string; familyMemberId: string; roleName: string }) => {
       try {
         const updatedMember = (await apiService.post('role/attach', {
@@ -474,7 +379,6 @@ export default {
 
     onMounted(async () => {
       await loadFamilies()
-      await loadAccesses()
       await checkHasFamily()
 
       if (userHasFamily.value && Object.keys(families.value).length > 0) {
@@ -486,7 +390,6 @@ export default {
       homeLoading,
       familyMembersLoading,
       tasksLoading,
-      familyRolesLoading,
       showEditTaskComponent,
       showCreateInvitationComponent,
       showCreateFamilyForm,
@@ -501,9 +404,6 @@ export default {
       currentTasks,
       families,
       familyStore,
-      showFamilySettings,
-      familySettingsError,
-      currentRoles,
       formatDate,
       showError,
       loadTasks,
@@ -518,12 +418,9 @@ export default {
       handleJoinFamily,
       handleCloseInvitationForm,
       handleOpenInvitationForm,
-      handleSaveFamilyName,
-      handleCreateRole,
-      handleUpdateRole,
-      handleDeleteRole,
       handleAssignRole,    
       handleDetachRole,
+      navigateToFamilySettings,
       // Chat methods
       handleSendMessage,
       handleEditMessage,
