@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import {type Ref, ref} from 'vue'
 import type {CreateInvitation, Family, FamilyMember, Role, Access} from "@/types/family.ts"
 import type {Task} from "@/types/task.ts"
+import type { MessageDto } from '@/types/chat'
 
 const useFamilyStore = defineStore('family', () => {
     const families = ref<Record<string, Ref<Family>>>({})
@@ -14,6 +15,7 @@ const useFamilyStore = defineStore('family', () => {
     const activeFamilyTab = ref<string>()
     const createInvitation = ref<CreateInvitation>()
     const accesses = ref<Access[]>()
+    const messages = ref<Record<string, MessageDto[]>>({})
 
     function updateTask(task: Task){
         if (activeFamilyTab.value) {
@@ -93,10 +95,53 @@ const useFamilyStore = defineStore('family', () => {
         familiesLoaded.value = true
     }
 
+    function addMessage(familyId: string, message: MessageDto) {
+        if (!messages.value[familyId]) {
+            messages.value[familyId] = []
+        }
+        messages.value[familyId].push(message)
+    }
+
+    function updateMessage(familyId: string, messageId: string, content: string) {
+        const familyMessages = messages.value[familyId]
+        if (familyMessages) {
+            const msg = familyMessages.find(m => m.messageId === messageId)
+            if (msg) {
+                msg.content = content
+                msg.updatedAt = new Date().toISOString()
+            }
+        }
+    }
+
+    function removeMessage(familyId: string, messageId: string) {
+        const familyMessages = messages.value[familyId]
+        if (familyMessages) {
+            const index = familyMessages.findIndex(m => m.messageId === messageId)
+            if (index !== -1) familyMessages.splice(index, 1)
+        }
+    }
+
+    function addReaction(familyId: string, messageId: string, reaction: string) {
+        const familyMessages = messages.value[familyId]
+        if (familyMessages) {
+            const msg = familyMessages.find(m => m.messageId === messageId)
+            if (msg) {
+                if (!msg.reactions) msg.reactions = []
+                msg.reactions.push({ emoji: reaction })
+            }
+        }
+    }
+
+    function loadMessages(familyId: string, newMessages: MessageDto[]) {
+        messages.value[familyId] = newMessages
+    }
+
+
     function clearStore() {
         families.value = {}
         profiles.value = {}
         members.value = {}
+        messages.value = {}
         accesses.value = []
         familiesLoaded.value = false
     }
@@ -110,6 +155,7 @@ const useFamilyStore = defineStore('family', () => {
         tasks,
         editTask,
         activeFamilyTab,
+        messages,
 
         // Методы
         loadMembers,
@@ -123,7 +169,11 @@ const useFamilyStore = defineStore('family', () => {
         loadAccesses,
         createInvitation,
         loadRoles,
-        clearStore
+        loadMessages,
+        addMessage,
+        updateMessage,
+        addReaction,
+        removeMessage
 
     }
 })

@@ -1,109 +1,62 @@
-import RSocketWebSocketClient from 'rsocket-websocket-client';
 import { RSocketClient } from 'rsocket-core';
-import { IdentitySerializer, JsonSerializer } from 'rsocket-core';
-import { encodeCompositeMetadata, encodeRoute, WellKnownMimeType } from 'rsocket-composite-metadata';
-import type { ReactiveSocket, Payload } from 'rsocket-types';
-import { Buffer } from 'buffer';
+import RSocketWebSocketClient from 'rsocket-websocket-client';
 import { Observable } from 'rxjs';
+import type { ReactiveSocket, Payload } from 'rsocket-types';
 
 const RSOCKET_URL = import.meta.env.VITE_RSOCKET_URL || 'ws://localhost:7000/rsocket';
+const MAX_STREAM_ID = 2147483647;
 
 let rsocketConnection: ReactiveSocket<any, any> | null = null;
-let rsocketConnectionPromise: Promise<ReactiveSocket<any, any>> | null = null;
 
-function getAuthToken(): string | null {
-  return localStorage.getItem('token');
+function createMetadata(route: string): string {
+  return JSON.stringify({ route: route });
 }
 
-function createMetadata(route: string): Buffer {
-  const compositeMetadata = encodeCompositeMetadata([
-    [WellKnownMimeType.MESSAGE_RSOCKET_ROUTING, encodeRoute(route)]
-  ]);
-  return Buffer.from(compositeMetadata);
-}
-
-function addAuthToMetadata(metadata: Buffer): Buffer {
-  const token = getAuthToken();
-  if (token) {
-    const authMetadata = encodeCompositeMetadata([
-      [WellKnownMimeType.MESSAGE_RSOCKET_AUTHENTICATION, Buffer.from(`Bearer ${token}`)]
-    ]);
-    return Buffer.concat([metadata, Buffer.from(authMetadata)]);
+async function connect(): Promise<ReactiveSocket<any, any>> {
+  if (rsocketConnection && rsocketConnection.availability() > 0) {
+    return rsocketConnection;
   }
-  return metadata;
+
+  const client = new RSocketClient({
+    setup: {
+      keepAlive: 20000,
+      lifetime: 60000,
+      dataMimeType: 'application/json',
+      metadataMimeType: 'application/json',
+    },
+    transport: new RSocketWebSocketClient({
+      url: RSOCKET_URL,
+    }),
+  });
+
+  rsocketConnection = await client.connect();
+  console.log('RSocket connected');
+  return rsocketConnection;
 }
 
 export const rsocketService = {
   async connect(): Promise<ReactiveSocket<any, any>> {
-    if (rsocketConnection && rsocketConnection.availability() > 0) {
-      return rsocketConnection;
-    }
-
-    if (rsocketConnectionPromise) {
-      return rsocketConnectionPromise;
-    }
-
-    rsocketConnectionPromise = new Promise((resolve, reject) => {
-      try {
-        const client = new RSocketClient({
-          serializers: {
-            data: JsonSerializer,
-            metadata: IdentitySerializer,
-          },
-          setup: {
-            keepAlive: 20000,
-            lifetime: 60000,
-            dataMimeType: 'application/json',
-            metadataMimeType: WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.toString(),
-          },
-          transport: new RSocketWebSocketClient({
-            url: RSOCKET_URL,
-          }),
-        });
-
-        client.connect().then(
-          (socket: ReactiveSocket<any, any>) => {
-            rsocketConnection = socket;
-            console.log('RSocket connected');
-            resolve(socket);
-          },
-          (error: any) => {
-            rsocketConnectionPromise = null;
-            reject(error);
-          }
-        );
-      } catch (error) {
-        rsocketConnectionPromise = null;
-        reject(error);
-      }
-    });
-
-    return rsocketConnectionPromise;
+    return connect();
   },
 
   disconnect() {
     if (rsocketConnection) {
       rsocketConnection.close();
       rsocketConnection = null;
-      rsocketConnectionPromise = null;
       console.log('RSocket disconnected');
     }
   },
 
   async requestStream(route: string, data?: any): Promise<Observable<any>> {
-    const socket = await this.connect();
-    const metadata = addAuthToMetadata(createMetadata(route));
-    const dataBuffer = data ? Buffer.from(JSON.stringify(data)) : Buffer.from('');
-    
-    return new Observable((subscriber) => {
-      const subscription = socket.requestStream({
-        data: dataBuffer,
-        metadata: metadata,
-      });
+    const socket = await connect();
+    const metadata = createMetadata(route);
+    const dataStr = data ? JSON.stringify(data) : '';
 
-      (subscription as any).subscribe({
-        onComplete: () => subscriber.complete(),
-        onError: (error: Error) => subscriber.error(error),
+    return new Observable((subscriber) => {
+      socket.requestStream({
+        data: dataStr,
+        metadata,
+      }).subscribe({
         onNext: (payload: Payload<any, any>) => {
           try {
             const response = JSON.parse(payload.data?.toString() || '{}');
@@ -112,49 +65,52 @@ export const rsocketService = {
             subscriber.error(error);
           }
         },
+        onError: (error: any) => {
+          console.error('RequestStream error:', error);
+          subscriber.error(error);
+        },
+        onSubscribe: (subscription: any) => {
+          subscription.request(MAX_STREAM_ID);
+        },
+        onComplete: () => subscriber.complete(),
       });
     });
   },
 
   async fireAndForget(route: string, data?: any): Promise<void> {
-    const socket = await this.connect();
-    const metadata = addAuthToMetadata(createMetadata(route));
-    const dataBuffer = data ? Buffer.from(JSON.stringify(data)) : Buffer.from('');
-    
-    return new Promise((resolve, reject) => {
-      const subscription = socket.fireAndForget({
-        data: dataBuffer,
-        metadata: metadata,
-      });
+    const socket = await connect();
+    const metadata = createMetadata(route);
+    const dataStr = data ? JSON.stringify(data) : '';
 
-      (subscription as any).subscribe({
-        onComplete: () => resolve(),
-        onError: (error: Error) => reject(error),
-      });
+    socket.fireAndForget({
+      data: dataStr,
+      metadata,
     });
   },
 
   async requestResponse(route: string, data?: any): Promise<any> {
-    const socket = await this.connect();
-    const metadata = addAuthToMetadata(createMetadata(route));
-    const dataBuffer = data ? Buffer.from(JSON.stringify(data)) : Buffer.from('');
-    
-    return new Promise((resolve, reject) => {
-      const subscription = socket.requestResponse({
-        data: dataBuffer,
-        metadata: metadata,
-      });
+    const socket = await connect();
+    const metadata = createMetadata(route);
+    const dataStr = data ? JSON.stringify(data) : '';
 
-      (subscription as any).subscribe({
-        onComplete: () => {},
-        onError: (error: Error) => reject(error),
-        onNext: (payload: Payload<any, any>) => {
+    return new Promise((resolve, reject) => {
+      socket.requestResponse({
+        data: dataStr,
+        metadata,
+      }).subscribe({
+        onComplete: (payload: Payload<any, any>) => {
           try {
             const response = JSON.parse(payload.data?.toString() || '{}');
             resolve(response);
           } catch (error) {
             reject(error);
           }
+        },
+        onError: (error: any) => {
+          reject(error);
+        },
+        onSubscribe: (subscription: any) => {
+          subscription.request(MAX_STREAM_ID);
         },
       });
     });

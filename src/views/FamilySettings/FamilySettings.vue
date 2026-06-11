@@ -145,19 +145,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, unref } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from "@/views/header/Header.vue"
 import { ValidationError } from "@/error/types/serverErrorResponses"
 import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue"
-import type { Role } from '@/types/family'
+import type { Family, Role } from '@/types/family'
 import { apiService } from '@/services/api'
 import { ProblemDetail } from '@/error/types/serverErrorResponses'
 import useFamilyStore from "@/stores/familyStore.ts"
 
 const route = useRoute()
 const familyStore = useFamilyStore()
-
 const activeTab = ref('general')
 const familyNameModel = ref('')
 const showCreateRoleForm = ref(false)
@@ -183,21 +182,11 @@ const sortedRoles = computed(() => {
   return [...currentRoles.value].sort((a, b) => b.value - a.value)
 })
 
-const loadFamilyData = async () => {
-  try {
-    const family = familyStore.families[familyId.value]
-    if (family) {
-      familyNameModel.value = family.value.familyName
-    } else {
-      const familyData = await apiService.get(`family/${familyId.value}`)
-      familyNameModel.value = familyData.body.familyName
-    }
-  } catch (err) {
-    console.error('Ошибка загрузки данных семьи:', err)
-  }
-}
 
 const loadRoles = async () => {
+  if(familyStore.roles){
+    return
+  }
   rolesLoading.value = true
   try {
     const rolesData = await apiService.get(`role/${familyId.value}`)
@@ -286,6 +275,17 @@ const saveRole = async () => {
   }
 }
 
+const loadFamilyData = async () => {
+  try {
+    const family = familyStore.families[familyId.value]
+    if (family) {
+      familyNameModel.value = unref(family).familyName
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки данных семьи:', err)
+  }
+}
+
 const deleteRole = async (role: Role) => {
   try {
     await apiService.delete('role', {
@@ -305,9 +305,7 @@ const deleteRole = async (role: Role) => {
 
 onMounted(async () => {
   await loadAccesses()
-  await Promise.all([
-    loadFamilyData(),
-    loadRoles()
-  ])
+  await loadFamilyData()
+  await loadRoles()
 })
 </script>
