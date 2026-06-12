@@ -54,10 +54,11 @@ export const rsocketService = {
       }).subscribe({
         onNext: (payload: Payload<any, any>) => {
           try {
-            const response = JSON.parse(payload.data?.toString() || '{}');
+            const response = payload.data
+            console.log(response)
             subscriber.next(response);
           } catch (error) {
-            
+            console.log(error)
             subscriber.error(error);
           }
         },
@@ -85,32 +86,32 @@ export const rsocketService = {
     });
   },
 
-  async requestResponse(route: string, data?: any): Promise<any> {
+async requestResponse(route: string, data?: any): Promise<any> {
     const socket = await connect();
-    const metadata = {route: route};
-    const dataStr = data
-
+    const metadata = { route: route };
+    const dataStr = data;
+    console.log("trying to connect");
+    
     return new Promise((resolve, reject) => {
-      socket.requestResponse({
-        data: dataStr,
-        metadata,
-      }).subscribe({
-        onComplete: (payload: Payload<any, any>) => {
-          try {
-            const response = JSON.parse(payload.data?.toString() || '{}');
-            resolve(response);
-          } catch (error) {
-            reject(error);
-          }
-        },
-        onError: (error: any) => {
-        
-          reject(error);
-        },
-        onSubscribe: (subscription: any) => {
-          subscription.request(MAX_STREAM_ID);
-        },
-      });
+        socket.requestResponse({
+            data: dataStr,
+            metadata,
+        }).subscribe({
+            onComplete: (payload: Payload<any, any>) => {
+                try {
+                    const response = payload.data;
+                    console.log(response);
+                    resolve(response);
+                } catch (error) {
+                    console.log(error);
+                    reject(error);
+                }
+            },
+            onError: (error: any) => {
+                console.log(error);
+                reject(error);
+            },
+        });
     });
-  },
+}
 };

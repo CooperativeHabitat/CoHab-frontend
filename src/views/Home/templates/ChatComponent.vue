@@ -151,22 +151,16 @@ const loadChatHistory = async (page: number = 0, size: number = 20) => {
       endDate: null
     }
     
-    const stream = await rsocketService.requestStream(
+    
+    const response = await rsocketService.requestResponse(
       `api.family.messages.${activeFamilyTab.value}`,
       request
     )
     
-    const result: MessageDto[] = []
-    await new Promise((resolve, reject) => {
-      stream.subscribe({
-        next: (message: MessageDto) => result.push(message),
-        error: (error: any) => reject(error),
-        complete: () => {
-          familyStore.loadMessages(activeFamilyTab.value!, result)
-          resolve(result)
-        }
-      })
-    })
+    // response уже содержит список сообщений
+    const result: MessageDto[] = Array.isArray(response) ? response : [response]
+    familyStore.loadMessages(activeFamilyTab.value!, result)
+    
   } catch (error) {
     console.error('Ошибка загрузки истории:', error)
   }
