@@ -68,8 +68,8 @@ const sendMessage = async () => {
   
   try {
     const request: CreateMessageRequest = {
-      familyId: activeFamilyTab.value,
       content: newMessage.value.trim(),
+      familyId: activeFamilyTab.value,
       replyToId: null
     }
     await rsocketService.fireAndForget('api.family.chat.send', request)
