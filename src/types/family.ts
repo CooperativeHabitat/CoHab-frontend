@@ -25,10 +25,15 @@ export interface PersonalInfo{
     birthDate: string,
 }
 
-export interface FamilyMember{
+export interface Member{
     id: string,
     username: string,
     personalInfo: PersonalInfo
+}
+
+export interface FamilyMember{
+    id: string,
+    member: Member,
     family: Family,
     roles: Role[],
     addedAt: Date

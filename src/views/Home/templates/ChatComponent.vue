@@ -9,7 +9,7 @@
       </div>
       <div v-else v-for="message in messages" :key="message.messageId" class="mb-2">
         <div class="d-flex justify-content-between">
-          <strong>{{ message.memberId || 'Участник' }}</strong>
+          <strong>{{ familyStore.membersInfo[message.memberId]?.value.firstname || "Неизвестный" }} {{ familyStore.membersInfo[message.memberId]?.value.lastname || "енот" }}</strong>
           <small class="text-muted">{{ formatDate(message.sentAt) }}</small>
         </div>
         <p class="mb-1">{{ message.content }}</p>
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import useFamilyStore from '@/stores/familyStore'
 import { rsocketService } from '@/services/rsocket'
 import { 
@@ -199,6 +199,13 @@ const formatDate = (dateString: string): string => {
   const date = new Date(dateString)
   return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
+
+watch(activeFamilyTab, async (newTab) => {
+    if (newTab) {
+      await loadChatHistory()
+      connectToChatStream()
+    }
+  })
 
 onMounted(async () => {
   await loadChatHistory()

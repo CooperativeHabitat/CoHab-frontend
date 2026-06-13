@@ -1,4 +1,4 @@
-import { IdentitySerializer, JsonSerializer, RSocketClient } from 'rsocket-core';
+import { JsonSerializer, RSocketClient } from 'rsocket-core';
 import RSocketWebSocketClient from 'rsocket-websocket-client';
 import { Observable } from 'rxjs';
 import type { ReactiveSocket, Payload } from 'rsocket-types';
@@ -9,8 +9,10 @@ const MAX_STREAM_ID = 2147483647;
 let rsocketConnection: ReactiveSocket<any, any> | null = null;
 
 
-
 async function connect(): Promise<ReactiveSocket<any, any>> {
+  if(rsocketConnection != null){
+    return rsocketConnection
+  }
   const transportOptions = {
     url: RSOCKET_URL,
     wsCreator: (url: string | URL) => {
@@ -44,6 +46,7 @@ export const rsocketService = {
 
   async requestStream(route: string, data?: any): Promise<Observable<any>> {
     const socket = await connect();
+    console.log("request stream: " +route)
     const metadata = {route: route}
     const dataStr = data
 
@@ -77,6 +80,7 @@ export const rsocketService = {
 
   async fireAndForget(route: string, data?: any): Promise<void> {
     const socket = await connect();
+    console.log("sending data: "+ data)
     const metadata = {route: route};
     const dataStr = data
 
@@ -90,7 +94,6 @@ async requestResponse(route: string, data?: any): Promise<any> {
     const socket = await connect();
     const metadata = { route: route };
     const dataStr = data;
-    console.log("trying to connect");
     
     return new Promise((resolve, reject) => {
         socket.requestResponse({

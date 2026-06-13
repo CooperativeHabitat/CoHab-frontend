@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import {type Ref, ref} from 'vue'
-import type {CreateInvitation, Family, FamilyMember, Role, Access} from "@/types/family.ts"
+import type {CreateInvitation, Family, FamilyMember, Role, Access, PersonalInfo} from "@/types/family.ts"
 import type {Task} from "@/types/task.ts"
 import type { MessageDto } from '@/types/chat'
+import type { ReactiveSocket } from 'rsocket-types'
 
 const useFamilyStore = defineStore('family', () => {
     const families = ref<Record<string, Ref<Family>>>({})
@@ -10,6 +11,7 @@ const useFamilyStore = defineStore('family', () => {
     const roles = ref<Record<string, Ref<Role>[]>>({})
     const familiesLoaded = ref<boolean>(false)
     const members = ref<Record<string, Ref<FamilyMember>[]>>({'add':[]})
+    const membersInfo = ref<Record<string, Ref<PersonalInfo>>>({})
     const tasks = ref<Record<string, Ref<Task>[]>>({})
     const editTask = ref<Task|null>()
     const activeFamilyTab = ref<string>()
@@ -69,7 +71,12 @@ const useFamilyStore = defineStore('family', () => {
         if (familyMembers.length > 0) {
             const firstMember = familyMembers[0]
             if (firstMember?.family?.id) {
-                members.value[firstMember.family.id] = familyMembers.map(member => ref(member))
+            members.value[firstMember.family.id] = familyMembers.map(member => ref(member))
+            familyMembers.forEach(familyMember => {
+                console.log(familyMember.member.id)
+                membersInfo.value[familyMember.member.id] = ref(familyMember.member.personalInfo)
+                
+            })
             }
         }
     }
@@ -137,14 +144,6 @@ const useFamilyStore = defineStore('family', () => {
     }
 
 
-    function clearStore() {
-        families.value = {}
-        profiles.value = {}
-        members.value = {}
-        messages.value = {}
-        accesses.value = []
-        familiesLoaded.value = false
-    }
     return {
         // Реактивные данные
         families,
@@ -173,8 +172,8 @@ const useFamilyStore = defineStore('family', () => {
         addMessage,
         updateMessage,
         addReaction,
-        removeMessage
-
+        removeMessage,
+        membersInfo
     }
 })
 

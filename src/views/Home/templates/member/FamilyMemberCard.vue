@@ -7,7 +7,7 @@
       </div>
       <div>
         <strong>{{ fullName }}</strong>
-        <p class="mb-0 text-muted small">{{ memberData.username || 'Без логина' }}</p>
+        <p class="mb-0 text-muted small">{{ memberData.member.username || 'Без логина' }}</p>
         <div v-if="memberData.roles?.length" class="d-flex flex-wrap gap-1 mt-1">
           <span v-for="role in sortedRoles" :key="role.id" 
                 class="badge rounded-pill" 
@@ -61,15 +61,18 @@ const emit = defineEmits<{
 
 const memberData = computed(() => props.member.value)
 
+// ✅ Добавьте безопасную проверку personalInfo
+const personalInfo = computed(() => memberData.value.member?.personalInfo)
+
 const initials = computed(() => {
-  const first = memberData.value.personalInfo?.firstname?.charAt(0) || ''
-  const last = memberData.value.personalInfo?.lastname?.charAt(0) || ''
+  const first = personalInfo.value?.firstname?.charAt(0) || ''
+  const last = personalInfo.value?.lastname?.charAt(0) || ''
   return (first + last).toUpperCase() || '?'
 })
 
 const fullName = computed(() => {
-  const first = memberData.value.personalInfo?.firstname || 'Не указано'
-  const last = memberData.value.personalInfo?.lastname || ''
+  const first = personalInfo.value?.firstname || 'Не указано'
+  const last = personalInfo.value?.lastname || ''
   return last ? `${first} ${last}` : first
 })
 
