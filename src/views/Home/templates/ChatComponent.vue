@@ -7,14 +7,14 @@
       <div v-if="!messages || messages.length === 0" class="text-center text-muted py-3">
         Сообщений пока нет
       </div>
-      <div v-else v-for="message in messages" :key="message.messageId" class="mb-2">
+      <div v-else v-for="message in messages" :key="message.value.messageId" class="mb-2">
         <div class="d-flex justify-content-between">
-          <strong>{{ familyStore.membersInfo[message.memberId]?.value.firstname || "Неизвестный" }} {{ familyStore.membersInfo[message.memberId]?.value.lastname || "енот" }}</strong>
-          <small class="text-muted">{{ formatDate(message.sentAt) }}</small>
+          <strong>{{ getMemberName(message.value.memberId) }}</strong>
+          <small class="text-muted">{{ formatDate(message.value.sentAt) }}</small>
         </div>
-        <p class="mb-1">{{ message.content }}</p>
-        <div v-if="message.reactions && message.reactions.length" class="d-flex gap-1">
-          <span v-for="reaction in message.reactions" :key="reaction.emoji" class="badge bg-light text-dark">
+        <p class="mb-1">{{ message.value.content }}</p>
+        <div v-if="message.value.reactions && message.value.reactions.length" class="d-flex gap-1">
+          <span v-for="reaction in message.value.reactions" :key="reaction.emoji" class="badge bg-light text-dark">
             {{ reaction.emoji }}
           </span>
         </div>
@@ -62,6 +62,16 @@ const messages = computed(() => {
   const tab = activeFamilyTab.value
   return tab ? familyStore.messages[tab] || [] : []
 })
+
+const getMemberName = (memberId: string) => {
+  const memberInfo = familyStore.membersInfo[memberId]
+
+  if (!memberInfo?.value) return 'Неизвестный енот'
+  
+  const firstName = memberInfo.value.firstname || 'Неизвестный'
+  const lastName = memberInfo.value.lastname || 'енот'
+  return `${firstName} ${lastName}`
+}
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || !activeFamilyTab.value) return
@@ -151,13 +161,11 @@ const loadChatHistory = async (page: number = 0, size: number = 20) => {
       endDate: null
     }
     
-    
     const response = await rsocketService.requestResponse(
       `api.family.messages.${activeFamilyTab.value}`,
       request
     )
     
-    // response уже содержит список сообщений
     const result: MessageDto[] = Array.isArray(response) ? response : [response]
     familyStore.loadMessages(activeFamilyTab.value!, result)
     

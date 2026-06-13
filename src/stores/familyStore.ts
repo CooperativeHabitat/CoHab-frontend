@@ -17,11 +17,11 @@ const useFamilyStore = defineStore('family', () => {
     const activeFamilyTab = ref<string>()
     const createInvitation = ref<CreateInvitation>()
     const accesses = ref<Access[]>()
-    const messages = ref<Record<string, MessageDto[]>>({})
+    const messages = ref<Record<string, Ref<MessageDto>[]>>({})
 
     function updateTask(task: Task){
         if (activeFamilyTab.value) {
-            const familyTasks = tasks.value[activeFamilyTab.value] // .value!
+            const familyTasks = tasks.value[activeFamilyTab.value]
             if (familyTasks) {
                 const taskIndex = familyTasks.findIndex(
                     (t: Ref<Task>) => t.value.id === task.id
@@ -45,7 +45,7 @@ const useFamilyStore = defineStore('family', () => {
 
     function deleteTask(task: Task){
         if (activeFamilyTab.value) {
-            const familyTasks = tasks.value[activeFamilyTab.value] // .value!
+            const familyTasks = tasks.value[activeFamilyTab.value]
             if (familyTasks) {
                 const taskIndex = familyTasks.findIndex(
                     (t: Ref<Task>) => t.value.id === task.id
@@ -71,12 +71,12 @@ const useFamilyStore = defineStore('family', () => {
         if (familyMembers.length > 0) {
             const firstMember = familyMembers[0]
             if (firstMember?.family?.id) {
-            members.value[firstMember.family.id] = familyMembers.map(member => ref(member))
-            familyMembers.forEach(familyMember => {
-                console.log(familyMember.member.id)
-                membersInfo.value[familyMember.member.id] = ref(familyMember.member.personalInfo)
-                
-            })
+                members.value[firstMember.family.id] = familyMembers.map(member => ref(member))
+                familyMembers.forEach(familyMember => {
+                    if (familyMember?.member?.id && familyMember?.member?.personalInfo) {
+                        membersInfo.value[familyMember.member.id] = ref(familyMember.member.personalInfo)
+                    }
+                })
             }
         }
     }
@@ -106,16 +106,16 @@ const useFamilyStore = defineStore('family', () => {
         if (!messages.value[familyId]) {
             messages.value[familyId] = []
         }
-        messages.value[familyId].push(message)
+        messages.value[familyId].push(ref(message))
     }
 
     function updateMessage(familyId: string, messageId: string, content: string) {
         const familyMessages = messages.value[familyId]
         if (familyMessages) {
-            const msg = familyMessages.find(m => m.messageId === messageId)
+            const msg = familyMessages.find(m => m.value.messageId === messageId)
             if (msg) {
-                msg.content = content
-                msg.updatedAt = new Date().toISOString()
+                msg.value.content = content
+                msg.value.updatedAt = new Date().toISOString()
             }
         }
     }
@@ -123,7 +123,7 @@ const useFamilyStore = defineStore('family', () => {
     function removeMessage(familyId: string, messageId: string) {
         const familyMessages = messages.value[familyId]
         if (familyMessages) {
-            const index = familyMessages.findIndex(m => m.messageId === messageId)
+            const index = familyMessages.findIndex(m => m.value.messageId === messageId)
             if (index !== -1) familyMessages.splice(index, 1)
         }
     }
@@ -131,21 +131,19 @@ const useFamilyStore = defineStore('family', () => {
     function addReaction(familyId: string, messageId: string, reaction: string) {
         const familyMessages = messages.value[familyId]
         if (familyMessages) {
-            const msg = familyMessages.find(m => m.messageId === messageId)
+            const msg = familyMessages.find(m => m.value.messageId === messageId)
             if (msg) {
-                if (!msg.reactions) msg.reactions = []
-                msg.reactions.push({ emoji: reaction })
+                if (!msg.value.reactions) msg.value.reactions = []
+                msg.value.reactions.push({ emoji: reaction })
             }
         }
     }
 
     function loadMessages(familyId: string, newMessages: MessageDto[]) {
-        messages.value[familyId] = newMessages
+        messages.value[familyId] = newMessages.map(message => ref(message))
     }
 
-
     return {
-        // Реактивные данные
         families,
         profiles,
         familiesLoaded,
@@ -155,8 +153,6 @@ const useFamilyStore = defineStore('family', () => {
         editTask,
         activeFamilyTab,
         messages,
-
-        // Методы
         loadMembers,
         accesses,
         loadFamilies,
