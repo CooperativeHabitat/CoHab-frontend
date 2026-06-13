@@ -11,13 +11,13 @@ const useFamilyStore = defineStore('family', () => {
     const roles = ref<Record<string, Ref<Role>[]>>({})
     const familiesLoaded = ref<boolean>(false)
     const members = ref<Record<string, Ref<FamilyMember>[]>>({'add':[]})
-    const membersInfo = ref<Record<string, Ref<PersonalInfo>>>({})
+    const membersInfo = ref<Record<string, PersonalInfo>>({})
     const tasks = ref<Record<string, Ref<Task>[]>>({})
     const editTask = ref<Task|null>()
     const activeFamilyTab = ref<string>()
     const createInvitation = ref<CreateInvitation>()
     const accesses = ref<Access[]>()
-    const messages = ref<Record<string, Ref<MessageDto>[]>>({})
+    const messages = ref<Record<string, MessageDto[]>>({})
 
     function updateTask(task: Task){
         if (activeFamilyTab.value) {
@@ -74,7 +74,7 @@ const useFamilyStore = defineStore('family', () => {
                 members.value[firstMember.family.id] = familyMembers.map(member => ref(member))
                 familyMembers.forEach(familyMember => {
                     if (familyMember?.member?.id && familyMember?.member?.personalInfo) {
-                        membersInfo.value[familyMember.member.id] = ref(familyMember.member.personalInfo)
+                        membersInfo.value[familyMember.member.id] = familyMember.member.personalInfo
                     }
                 })
             }
@@ -106,16 +106,16 @@ const useFamilyStore = defineStore('family', () => {
         if (!messages.value[familyId]) {
             messages.value[familyId] = []
         }
-        messages.value[familyId].push(ref(message))
+        messages.value[familyId].push(message)
     }
 
     function updateMessage(familyId: string, messageId: string, content: string) {
         const familyMessages = messages.value[familyId]
         if (familyMessages) {
-            const msg = familyMessages.find(m => m.value.messageId === messageId)
+            const msg = familyMessages.find(m => m.messageId === messageId)
             if (msg) {
-                msg.value.content = content
-                msg.value.updatedAt = new Date().toISOString()
+                msg.content = content
+                msg.updatedAt = new Date().toISOString()
             }
         }
     }
@@ -123,7 +123,7 @@ const useFamilyStore = defineStore('family', () => {
     function removeMessage(familyId: string, messageId: string) {
         const familyMessages = messages.value[familyId]
         if (familyMessages) {
-            const index = familyMessages.findIndex(m => m.value.messageId === messageId)
+            const index = familyMessages.findIndex(m => m.messageId === messageId)
             if (index !== -1) familyMessages.splice(index, 1)
         }
     }
@@ -131,16 +131,16 @@ const useFamilyStore = defineStore('family', () => {
     function addReaction(familyId: string, messageId: string, reaction: string) {
         const familyMessages = messages.value[familyId]
         if (familyMessages) {
-            const msg = familyMessages.find(m => m.value.messageId === messageId)
+            const msg = familyMessages.find(m => m.messageId === messageId)
             if (msg) {
-                if (!msg.value.reactions) msg.value.reactions = []
-                msg.value.reactions.push({ emoji: reaction })
+                if (!msg.reactions) msg.reactions = []
+                msg.reactions.push({ emoji: reaction })
             }
         }
     }
 
     function loadMessages(familyId: string, newMessages: MessageDto[]) {
-        messages.value[familyId] = newMessages.map(message => ref(message))
+        messages.value[familyId] = newMessages
     }
 
     return {

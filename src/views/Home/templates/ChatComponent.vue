@@ -1,26 +1,50 @@
 <template>
   <div class="card h-100 d-flex flex-column overflow-hidden">
-    <div class="card-header">
-      <h3 class="mb-0">Чат семьи</h3>
+    <div class="card-header bg-body-tertiary border-bottom">
+      <h5 class="mb-0">
+        <i class="bi bi-chat-dots-fill me-2"></i>Чат семьи
+      </h5>
     </div>
-    <div class="card-body flex-grow-1 overflow-auto">
-      <div v-if="!messages || messages.length === 0" class="text-center text-muted py-3">
-        Сообщений пока нет
+    <div class="card-body flex-grow-1 overflow-auto p-3" ref="chatBody">
+      <div v-if="!messages || messages.length === 0" class="text-center text-muted py-5">
+        <i class="bi bi-chat-dots display-1 text-primary opacity-25"></i>
+        <p class="mt-3 fs-5">Сообщений пока нет</p>
+        <p class="text-muted small">Будьте первым, кто напишет в чат!</p>
       </div>
-      <div v-else v-for="message in messages" :key="message.value.messageId" class="mb-2">
-        <div class="d-flex justify-content-between">
-          <strong>{{ getMemberName(message.value.memberId) }}</strong>
-          <small class="text-muted">{{ formatDate(message.value.sentAt) }}</small>
-        </div>
-        <p class="mb-1">{{ message.value.content }}</p>
-        <div v-if="message.value.reactions && message.value.reactions.length" class="d-flex gap-1">
-          <span v-for="reaction in message.value.reactions" :key="reaction.emoji" class="badge bg-light text-dark">
-            {{ reaction.emoji }}
-          </span>
+      <div v-else v-for="message in messages" :key="message.messageId" class="mb-3">
+        <div :class="['d-flex', isCurrentUser(message.memberId) ? 'justify-content-end' : 'justify-content-start']">
+          <div class="w-75">
+            <div :class="[
+              'p-3',
+              isCurrentUser(message.memberId) 
+                ? 'bg-primary text-white ms-auto rounded-3' 
+                : 'bg-body-tertiary rounded-3'
+            ]">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong :class="isCurrentUser(message.memberId) ? 'text-white' : 'text-primary'">
+                  <i class="bi bi-person-circle me-1"></i>
+                  {{ getMemberName(message.memberId) }}
+                </strong>
+                <small :class="isCurrentUser(message.memberId) ? 'text-white-50' : 'text-muted'">
+                  <i class="bi bi-clock me-1"></i>{{ formatDate(message.sentAt) }}
+                </small>
+              </div>
+              <p class="mb-1">{{ message.content }}</p>
+              <div v-if="message.reactions && message.reactions.length" class="d-flex gap-1 mt-2">
+                <span 
+                  v-for="reaction in message.reactions" 
+                  :key="reaction.emoji" 
+                  class="badge bg-white text-dark"
+                >
+                  {{ reaction.emoji }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="card-footer">
+    <div class="card-footer bg-body-tertiary border-top">
       <div class="input-group">
         <input 
           v-model="newMessage" 
@@ -29,7 +53,8 @@
           placeholder="Введите сообщение..." 
           @keyup.enter="sendMessage"
         />
-        <button @click="sendMessage" :disabled="!newMessage.trim()" class="btn btn-primary">
+        <button @click="sendMessage" :disabled="!newMessage.trim()" class="btn btn-primary d-flex align-items-center gap-1">
+          <i class="bi bi-send-fill"></i>
           Отправить
         </button>
       </div>
@@ -38,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import useFamilyStore from '@/stores/familyStore'
 import { rsocketService } from '@/services/rsocket'
 import { 
@@ -55,6 +80,7 @@ import {
 
 const familyStore = useFamilyStore()
 const newMessage = ref('')
+const chatBody = ref<HTMLElement>()
 let subscription: any = null
 
 const activeFamilyTab = computed(() => familyStore.activeFamilyTab)
@@ -63,13 +89,31 @@ const messages = computed(() => {
   return tab ? familyStore.messages[tab] || [] : []
 })
 
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatBody.value) {
+      chatBody.value.scrollTop = chatBody.value.scrollHeight
+    }
+  })
+}
+
+
+const isCurrentUser = (memberId: string) => {
+  const activeFamilyId = familyStore.activeFamilyTab
+  if (!activeFamilyId) return false
+  
+  const profile = familyStore.profiles[activeFamilyId] as any
+  
+  if (!profile?.member?.id) return false
+  
+  return profile.member.id === memberId
+}
+
 const getMemberName = (memberId: string) => {
   const memberInfo = familyStore.membersInfo[memberId]
-
-  if (!memberInfo?.value) return 'Неизвестный енот'
-  
-  const firstName = memberInfo.value.firstname || 'Неизвестный'
-  const lastName = memberInfo.value.lastname || 'енот'
+  if (!memberInfo) return 'Неизвестный енот'
+  const firstName = memberInfo.firstname || 'Неизвестный'
+  const lastName = memberInfo.lastname || 'енот'
   return `${firstName} ${lastName}`
 }
 
@@ -84,69 +128,9 @@ const sendMessage = async () => {
     }
     await rsocketService.fireAndForget('api.family.chat.send', request)
     newMessage.value = ''
+    scrollToBottom()
   } catch (error) {
     console.error('Ошибка отправки сообщения:', error)
-  }
-}
-
-const editMessage = async (messageId: string, content: string) => {
-  if (!activeFamilyTab.value) return
-  
-  try {
-    const request: EditMessageRequest = {
-      familyId: activeFamilyTab.value,
-      messageId,
-      content
-    }
-    await rsocketService.fireAndForget('api.family.chat.edit', request)
-    familyStore.updateMessage(activeFamilyTab.value, messageId, content)
-  } catch (error) {
-    console.error('Ошибка редактирования сообщения:', error)
-  }
-}
-
-const deleteMessage = async (messageId: string) => {
-  if (!activeFamilyTab.value) return
-  
-  try {
-    const request: DeleteMessageRequest = {
-      familyId: activeFamilyTab.value,
-      messageId
-    }
-    await rsocketService.fireAndForget('api.family.chat.delete', request)
-    familyStore.removeMessage(activeFamilyTab.value, messageId)
-  } catch (error) {
-    console.error('Ошибка удаления сообщения:', error)
-  }
-}
-
-const viewMessage = async (messageId: string) => {
-  if (!activeFamilyTab.value) return
-  
-  try {
-    const request: ViewMessageRequest = {
-      familyId: activeFamilyTab.value,
-      messageId
-    }
-    await rsocketService.fireAndForget('api.family.chat.view', request)
-  } catch (error) {
-    console.error('Ошибка отметки просмотра:', error)
-  }
-}
-
-const reactMessage = async (messageId: string, reaction: string) => {
-  if (!activeFamilyTab.value) return
-  
-  try {
-    const request: ReactMessageRequest = {
-      familyId: activeFamilyTab.value,
-      messageId,
-      reaction
-    }
-    await rsocketService.fireAndForget('api.family.chat.react', request)
-    familyStore.addReaction(activeFamilyTab.value, messageId, reaction)
-  } catch (error) {
-    console.error('Ошибка реакции:', error)
   }
 }
 
@@ -154,11 +138,14 @@ const loadChatHistory = async (page: number = 0, size: number = 20) => {
   if (!activeFamilyTab.value) return
   
   try {
+    const now = new Date()
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    
     const request: MessageRequest = {
       page,
       size,
-      startDate: null,
-      endDate: null
+      startDate: yesterday.toISOString(),
+      endDate: now.toISOString()
     }
     
     const response = await rsocketService.requestResponse(
@@ -167,7 +154,8 @@ const loadChatHistory = async (page: number = 0, size: number = 20) => {
     )
     
     const result: MessageDto[] = Array.isArray(response) ? response : [response]
-    familyStore.loadMessages(activeFamilyTab.value!, result)
+    familyStore.loadMessages(activeFamilyTab.value!, result.reverse())
+    scrollToBottom()
     
   } catch (error) {
     console.error('Ошибка загрузки истории:', error)
@@ -191,6 +179,7 @@ const connectToChatStream = () => {
             sentAt: response.sentAt,
             updatedAt: response.updatedAt
           })
+          scrollToBottom()
         }
       },
       error: (error: any) => {
@@ -214,6 +203,10 @@ watch(activeFamilyTab, async (newTab) => {
       connectToChatStream()
     }
   })
+
+watch(messages, () => {
+  scrollToBottom()
+}, { deep: true })
 
 onMounted(async () => {
   await loadChatHistory()
