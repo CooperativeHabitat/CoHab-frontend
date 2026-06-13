@@ -39,10 +39,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { FamilyMember } from '@/types/family'
+import type { Member } from '@/types/family'
 
 interface Props {
-  person: FamilyMember
+  person: Member
   title?: string
   isMarked?: boolean
   isChecked?: boolean

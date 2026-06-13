@@ -26,7 +26,7 @@
             <label class="form-label">Исполнитель</label>
             <select v-model="form.issuedToId" class="form-select">
               <option value="" disabled>Выберите исполнителя</option>
-              <option v-for="member in familyMembers" :key="member.value?.id" :value="member.value?.id">
+              <option v-for="member in familyMembers" :key="member.value?.id" :value="member.value?.member?.id">
                 {{ formatMemberName(member.value) }}
               </option>
             </select>
@@ -91,8 +91,8 @@ const formatDateTimeLocal = (date: Date | string): string => {
 
 const formatMemberName = (member: FamilyMember | undefined): string => {
   if (!member) return 'Неизвестный'
-  const name = `${member.personalInfo?.firstname || ''} ${member.personalInfo?.lastname || ''}`.trim()
-  return name || member.username || 'Без имени'
+  const name = `${member.member?.personalInfo?.firstname || ''} ${member.member?.personalInfo?.lastname || ''}`.trim()
+  return name || member.member?.username || 'Без имени'
 }
 
 const updateForm = () => {
