@@ -3,7 +3,7 @@ import RSocketWebSocketClient from 'rsocket-websocket-client';
 import { Observable } from 'rxjs';
 import type { ReactiveSocket, Payload } from 'rsocket-types';
 
-const RSOCKET_URL = import.meta.env.COHAB_RSOCKET_URL || 'ws://localhost:7000/rsocket';
+const RSOCKET_URL = import.meta.env.VITE_COHAB_RSOCKET_URL || 'ws://localhost:7000/rsocket';
 const MAX_STREAM_ID = 2147483647;
 
 let rsocketConnection: ReactiveSocket<any, any> | null = null;

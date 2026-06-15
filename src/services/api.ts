@@ -1,7 +1,7 @@
 
 import { ProblemDetail } from "@/error/types/serverErrorResponses";
 
-const API_BASE_URL = import.meta.env.COHAB_API_URL;
+const API_BASE_URL = import.meta.env.VITE_COHAB_API_URL;
 
 async function handleApiError(response: Response) {
     var body = await response.json()
