@@ -26,7 +26,7 @@
             <label class="form-label">Исполнитель</label>
             <select v-model="form.issuedToId" class="form-select">
               <option value="" disabled>Выберите исполнителя</option>
-              <option v-for="member in familyMembers" :key="member.value?.id" :value="member.value?.member?.id">
+              <option v-for="member in familyMembers" :key="member.value?.id" :value="member.value?.id">
                 {{ formatMemberName(member.value) }}
               </option>
             </select>
