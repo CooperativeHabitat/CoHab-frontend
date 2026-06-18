@@ -2,13 +2,15 @@ import {getLoginState} from "@/services/loginStateResolver.ts";
 import { HomeIcon, UserIcon, LogOutIcon } from 'lucide-vue-next'
 import {authService} from "@/services/authService.ts";
 import router from "@/router";
+import NotificationDropdown from './NotificationDropdown.vue'
 
 export default {
     name: 'Header',
     components: {           
         HomeIcon,          
         UserIcon,           
-        LogOutIcon          
+        LogOutIcon,
+        NotificationDropdown
     }, 
 
     setup() {

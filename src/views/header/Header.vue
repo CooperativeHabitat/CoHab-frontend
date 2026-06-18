@@ -5,7 +5,10 @@
         <HomeIcon :size="24" />
         <strong>Семейный органайзер</strong>
       </a>
-      <ul v-if="state?.requiresAuth" class="navbar-nav ms-auto">
+      <ul v-if="state?.requiresAuth" class="navbar-nav ms-auto d-flex align-items-center">
+        <li class="nav-item">
+          <NotificationDropdown />
+        </li>
         <li class="nav-item">
           <button @click="handleProfileClick" class="btn nav-link" title="Профиль">
             <UserIcon :size="20" />

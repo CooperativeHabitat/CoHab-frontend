@@ -275,7 +275,7 @@ const loadChatHistory = async (page: number = 0, size: number = 20) => {
     }
     
     const response = await rsocketService.requestResponse(
-      `api.family.messages.${activeFamilyTab.value}`,
+      `api.family.chat.${activeFamilyTab.value}.messages`,
       request
     )
     
