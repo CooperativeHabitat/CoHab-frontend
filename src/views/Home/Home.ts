@@ -1,4 +1,4 @@
-import {computed, onMounted, type Ref, ref, watch} from 'vue'
+import {computed, onMounted, onUnmounted, type Ref, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {apiService} from '@/services/api'
 import Header from "@/views/header/Header.vue"
@@ -23,6 +23,8 @@ export default {
   components: {CreateInvitationComponent, EditTaskComponent, Header, TaskComponent, FamilyMemberCard, Splitpanes, Pane, ChatComponent, MembersPanel, TaskManager},
   setup() {
     const router = useRouter()
+    const familyStore = useFamilyStore()
+    
     const homeLoading = ref(false)
     const familyMembersLoading = ref(false)
     const tasksLoading = ref(false)
@@ -35,14 +37,21 @@ export default {
     const creatingFamily = ref(false)
     const joiningFamily = ref(false)
     const userHasFamily = ref(true)
+    const mobileTab = ref<'tasks' | 'members' | 'chat'>('tasks')
+    const isMobileView = ref(false)
+    const selectedFamilyId = ref('')
+
     const activeFamilyTab = computed(() => familyStore.activeFamilyTab)
 
-    const familyMembers = ref<Ref<FamilyMember>[]>([])
+    const familyMembers = computed(() => {
+      const tab = activeFamilyTab.value
+      return tab ? familyStore.members[tab] || [] : []
+    })
+
     const currentTasks = computed(() => {
       const tab = activeFamilyTab.value
       return tab ? familyStore.tasks[tab] || [] : []
     })
-    const familyStore = useFamilyStore()
 
     const families = computed(() => familyStore.families)
 
@@ -53,11 +62,20 @@ export default {
     }
 
     const showError = (message: string) => {
-      console.log(`Ошибка: ${message}`)
+      console.error(`Ошибка: ${message}`)
     }
 
-    const checkHasFamily = async (): Promise<void> => {
+    const checkHasFamily = () => {
       userHasFamily.value = Object.keys(families.value).length > 0
+    }
+
+    const checkMobileView = () => {
+      isMobileView.value = window.innerWidth < 768
+    }
+
+    const onFamilySelect = (event: Event) => {
+      const select = event.target as HTMLSelectElement
+      familyStore.activeFamilyTab = select.value || undefined
     }
 
     const loadFamilies = async (): Promise<void> => {
@@ -68,7 +86,7 @@ export default {
           familyStore.loadFamilies(familiesLoad)
         }
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка загрузки семей')
       } finally {
         homeLoading.value = false
@@ -84,7 +102,7 @@ export default {
           familyStore.loadTasks(tasksLoad, familyId)
         }
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка загрузки задач')
       } finally {
         tasksLoading.value = false
@@ -95,28 +113,27 @@ export default {
       if (!familyId) return
       familyMembersLoading.value = true
       try {
-        if (!familyStore.members[familyId] || force) {
+        if (!familyStore.members[familyId] || familyStore.members[familyId].length === 0 || force) {
           const members: FamilyMember[] = (await apiService.get('family/' + familyId + '/members')).body || []
           familyStore.loadMembers(members)
         }
-        familyMembers.value = familyStore.members[familyId] || []
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка загрузки членов семьи')
       } finally {
         familyMembersLoading.value = false
       }
     }
 
-    const loadRoles = async (familyId: string, force: boolean) : Promise<void> => {
+    const loadRoles = async (familyId: string, force: boolean): Promise<void> => {
       if (!familyId) return
       try {
-        if(!familyStore.roles[familyId] || force) {
-          const roles : Role[] = (await apiService.get('role/' + familyId)).body || []
+        if(!familyStore.roles[familyId] || familyStore.roles[familyId].length === 0 || force) {
+          const roles: Role[] = (await apiService.get('role/' + familyId)).body || []
           familyStore.loadRoles(familyId, roles)
         } 
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка загрузки ролей')
       }
     }
@@ -128,13 +145,17 @@ export default {
     }
 
     const handleCreateFamily = async (): Promise<void> => {
+      if (!newFamilyName.value.trim()) return
+      
       creatingFamily.value = true
       try {
         const familyMember: FamilyMember = (await apiService.post('family/create', {familyName: newFamilyName.value})).body
         familyStore.addFamily(familyMember)
         familyStore.activeFamilyTab = familyMember.family.id
+        showCreateFamilyForm.value = false
+        newFamilyName.value = ''
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка создания семьи')
       } finally {
         creatingFamily.value = false
@@ -142,127 +163,158 @@ export default {
     }
 
     const handleMarkTask = async (task: Ref<Task>, newMarked: boolean): Promise<void> => {
-      try{
+      try {
         await apiService.post(`task/mark-check`, {taskId: task.value.id, taskMarked: newMarked})
         task.value.isMarked = newMarked
-      }catch(error : any){
-        console.log(error)
-        showError(error.message)
+      } catch (error: any) {
+        console.error(error)
+        showError(error.message || 'Ошибка отметки задачи')
       }
     }
 
     const handleCheckTask = async (task: Ref<Task>, newChecked: boolean): Promise<void> => {
-      try{
+      try {
         await apiService.post(`task/mark-check`, {taskId: task.value.id, taskChecked: newChecked})
         task.value.isChecked = newChecked
-      }
-      catch(error : any){
-        console.log(error)
-        showError(error.message)
+      } catch (error: any) {
+        console.error(error)
+        showError(error.message || 'Ошибка проверки задачи')
       }
     }
 
-    const handleCloseTaskForm = async (): Promise<void> => {
-        showEditTaskComponent.value = false
-        familyStore.editTask = null
+    const handleCloseTaskForm = () => {
+      showEditTaskComponent.value = false
+      familyStore.editTask = null
     }
 
     const handleDeleteTask = async (task: Ref<Task>): Promise<void> => {
-      try{
+      try {
         await apiService.delete(`task`, {taskId: task.value.id, familyId: activeFamilyTab.value})
         familyStore.deleteTask(task.value)
-      }catch (error: any){
-        console.log(error)
-        showError(error.message)
+      } catch (error: any) {
+        console.error(error)
+        showError(error.message || 'Ошибка удаления задачи')
       }
     }
 
-    const handleEditTaskPress = async (task: Ref<Task>): Promise<void> => {
-      showEditTaskComponent.value = true;
+    const handleEditTaskPress = (task: Ref<Task>): void => {
+      showEditTaskComponent.value = true
       familyStore.editTask = task.value
     }
 
     const handleJoinFamily = async (): Promise<void> => {
+      if (!joinFamilyCode.value.trim()) return
+      
       joiningFamily.value = true
       try {
-        const familyMember = (await apiService.post(`family/use-invitation`, {code: joinFamilyCode.value} )).body
+        const familyMember: FamilyMember = (await apiService.post(`family/use-invitation`, {code: joinFamilyCode.value})).body
         familyStore.addFamily(familyMember)
         familyStore.activeFamilyTab = familyMember.family.id
-      }
-      catch(error: any){
-        console.log(error)
-        showError(error.message)
-      }
-      finally {
+        showJoinFamilyForm.value = false
+        joinFamilyCode.value = ''
+      } catch (error: any) {
+        console.error(error)
+        showError(error.message || 'Ошибка вступления в семью')
+      } finally {
         joiningFamily.value = false
       }
     }
 
-    const handleOpenInvitationForm = async (): Promise<void> => {
-      showCreateInvitationComponent.value = true;
+    const handleOpenInvitationForm = (): void => {
+      showCreateInvitationComponent.value = true
     }
 
-    const handleCloseInvitationForm = async (): Promise<void> => {
-      showCreateInvitationComponent.value = false;
+    const handleCloseInvitationForm = (): void => {
+      showCreateInvitationComponent.value = false
     }
 
     const showAddTaskForm = (): void => {
       showEditTaskComponent.value = true
     }
     
-    const handleAssignRole = async (data: { familyId: string; familyMemberId: string; roleName: string }) => {
+    const handleAssignRole = async (data: { familyId: string; familyMemberId: string; roleName: string }): Promise<void> => {
       try {
-        const updatedMember = (await apiService.post('role/attach', {
+        const updatedMember: FamilyMember = (await apiService.post('role/attach', {
           familyId: data.familyId,
           familyMemberId: data.familyMemberId,
           roleName: data.roleName
         })).body
         
-        const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
-        const member = familyMembers.value[memberIndex]
-        if (memberIndex !== -1 && member) {
-          member.value = updatedMember
+        // Обновляем члена семьи в store
+        const members = familyStore.members[data.familyId]
+        if (members) {
+          const memberRef = members.find(m => m.value.id === data.familyMemberId)
+          if (memberRef) {
+            memberRef.value = updatedMember
+          }
         }
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка назначения роли')
       }
     }
 
-    const handleDetachRole = async (data: { familyId: string; familyMemberId: string; roleName: string }) => {
+    const handleDetachRole = async (data: { familyId: string; familyMemberId: string; roleName: string }): Promise<void> => {
       try {
-        const updatedMember = (await apiService.post('role/detach', {
+        const updatedMember: FamilyMember = (await apiService.post('role/detach', {
           familyId: data.familyId,
           familyMemberId: data.familyMemberId,
           roleName: data.roleName
         })).body
         
-        const memberIndex = familyMembers.value.findIndex(m => m.value.id === data.familyMemberId)
-        const member = familyMembers.value[memberIndex]
-        if (memberIndex !== -1 && member) {
-          member.value = updatedMember
+        // Обновляем члена семьи в store
+        const members = familyStore.members[data.familyId]
+        if (members) {
+          const memberRef = members.find(m => m.value.id === data.familyMemberId)
+          if (memberRef) {
+            memberRef.value = updatedMember
+          }
         }
       } catch (error) {
-        console.log(error)
+        console.error(error)
         showError('Ошибка снятия роли')
       }
     }
 
-    watch(activeFamilyTab, async (newTab) => {
-      if (newTab) {
-        await loadMembers(newTab, false)
-        await loadTasks(newTab, false)
-        await loadRoles(newTab, false)
+
+    watch(selectedFamilyId, (newValue) => {
+      familyStore.activeFamilyTab = newValue || undefined
+    })
+
+
+    watch(() => familyStore.activeFamilyTab, (newValue) => {
+      if (selectedFamilyId.value !== (newValue || '')) {
+        selectedFamilyId.value = newValue || ''
+      }
+    })
+
+
+    watch(activeFamilyTab, async (newTab, oldTab) => {
+      if (newTab && newTab !== oldTab) {
+        mobileTab.value = 'tasks'
+        await Promise.all([
+          loadMembers(newTab, false),
+          loadTasks(newTab, false),
+          loadRoles(newTab, false)
+        ])
       }
     })
 
     onMounted(async () => {
+      checkMobileView()
+      window.addEventListener('resize', checkMobileView)
+      
       await loadFamilies()
-      await checkHasFamily()
+      checkHasFamily()
 
       if (userHasFamily.value && Object.keys(families.value).length > 0) {
-        familyStore.activeFamilyTab = Object.keys(families.value)[0]
+        const firstFamilyId = Object.keys(families.value)[0]
+        familyStore.activeFamilyTab = firstFamilyId
       }
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', checkMobileView)
     })
 
     return {
@@ -283,6 +335,9 @@ export default {
       currentTasks,
       families,
       familyStore,
+      mobileTab,
+      isMobileView,
+      selectedFamilyId,
       formatDate,
       showError,
       loadTasks,
@@ -297,9 +352,11 @@ export default {
       handleJoinFamily,
       handleCloseInvitationForm,
       handleOpenInvitationForm,
-      handleAssignRole,    
+      handleAssignRole,
       handleDetachRole,
-      navigateToFamilySettings
+      navigateToFamilySettings,
+      onFamilySelect,
+      checkMobileView
     }
   }
 }

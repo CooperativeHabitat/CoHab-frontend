@@ -1,6 +1,5 @@
 <template>
   <div class="d-flex flex-column vh-100">
-    <Header />
     
     <main class="flex-grow-1 d-flex flex-column p-4 overflow-hidden">
       <div class="card shadow-sm flex-grow-1 d-flex flex-column overflow-hidden">
@@ -147,7 +146,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, unref } from 'vue'
 import { useRoute } from 'vue-router'
-import Header from "@/views/header/Header.vue"
 import { ValidationError } from "@/error/types/serverErrorResponses"
 import ValidationErrorComponent from "@/error/templates/ValidationErrorComponent.vue"
 import type { Family, Role } from '@/types/family'

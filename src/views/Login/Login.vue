@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <main class="d-flex align-items-center justify-content-center min-vh-100 p-3">
     <div class="card shadow" style="max-width: 28rem; width: 100%;">
       <div class="card-header text-center">
