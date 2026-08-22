@@ -28,7 +28,7 @@
       </div>
 
       <div class="card-footer text-center">
-        <small class="text-muted">Нет аккаунта? <a href="/cohab/registration">Зарегистрироваться</a></small>
+        <small class="text-muted">Нет аккаунта? <a href="/registration">Зарегистрироваться</a></small>
       </div>
     </div>
   </main>

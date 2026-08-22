@@ -3,7 +3,7 @@ import { authGuard } from './guards/authGuard';
 import { verificationGuard } from './guards/verificationGuard';
 
 const router = createRouter({
-  history: createWebHistory('/cohab/'),
+  history: createWebHistory('/'),
   routes: [
     {
       path: '/login',

@@ -43,7 +43,7 @@
       </div>
 
       <div class="card-footer text-center">
-        <small class="text-muted">Есть аккаунт? <a href="/cohab/login">Войти</a></small>
+        <small class="text-muted">Есть аккаунт? <a href="/login">Войти</a></small>
       </div>
     </div>
   </main>
